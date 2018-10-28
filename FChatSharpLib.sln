@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28010.2026
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FChatSharpLib", "FChatSharpLib\FChatSharpLib.csproj", "{7071858E-B888-4031-99C0-292EFCC1D651}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FChatSharpLib", "FChatSharpLib\FChatSharpLib.csproj", "{7071858E-B888-4031-99C0-292EFCC1D651}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FChatSharp", "FChatSharpLib.Standalone\FChatSharp.csproj", "{8664CD9B-6389-4CC1-8131-4A369F237CD3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{7071858E-B888-4031-99C0-292EFCC1D651}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7071858E-B888-4031-99C0-292EFCC1D651}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7071858E-B888-4031-99C0-292EFCC1D651}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8664CD9B-6389-4CC1-8131-4A369F237CD3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8664CD9B-6389-4CC1-8131-4A369F237CD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8664CD9B-6389-4CC1-8131-4A369F237CD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8664CD9B-6389-4CC1-8131-4A369F237CD3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
