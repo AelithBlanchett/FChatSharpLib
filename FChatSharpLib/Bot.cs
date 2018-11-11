@@ -14,6 +14,8 @@ using System.Security.Policy;
 using RabbitMQ.Client.Events;
 using RabbitMQ.Client;
 using FChatSharpLib.Entities.Events;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace FChatSharpLib
 {
@@ -27,15 +29,26 @@ namespace FChatSharpLib
         private string _administratorCharacterName;
         private bool _debug;
         private int _delayBetweenEachReconnection;
+        private Timer _pingTimer;
+        private int commandsInQueue;
+        private long lastTimeCommandReceived = long.MaxValue;
+        private double floodLimit = 2.0;
 
         public IWebSocketEventHandler WSEventHandlers { get; set; }
-
         public WebSocket WsClient { get; set; }
-
         public PluginManager PluginManager { get; set; }
-
         public Events Events { get; set; }
-        private IModel _pubsubChannel;
+        public Dictionary<string, string> ChannelsInfo { get; set; }
+        public IEnumerable<string> Channels
+        {
+            get
+            {
+                return ChannelsInfo.Keys;
+            }
+        }
+
+
+
 
         public Bot(string username, string password, string botCharacterName, string administratorCharacterName)
         {
@@ -46,6 +59,7 @@ namespace FChatSharpLib
             _debug = false;
             _delayBetweenEachReconnection = 4000;
             Events = new Events();
+            ChannelsInfo = new Dictionary<string, string>();
             PluginManager = new PluginManager(this);
         }
 
@@ -53,31 +67,6 @@ namespace FChatSharpLib
         {
             _debug = debug;
             _delayBetweenEachReconnection = delayBetweenEachReconnection;
-        }
-
-        private void ReceivedCommand(object model, BasicDeliverEventArgs e)
-        {
-            var body = Encoding.UTF8.GetString(e.Body);
-            try
-            {
-                var command = BaseFChatEvent.Deserialize(body);
-                var commandType = command.GetType().Name;
-
-                switch (commandType)
-                {
-                    case "Message":
-                        var typedCommand = (Message)command;
-                        SendMessage(typedCommand.message, typedCommand.channel);
-                        break;
-                    default:
-                        break;
-                }
-            }
-            catch (Exception ex)
-            {
-                return;
-            }
-            
         }
 
         private string GetTicket()
@@ -136,7 +125,33 @@ namespace FChatSharpLib
 
             WsClient.Connect();
 
-            //InitializePluginManager();
+            _pingTimer = new Timer(SendPing, null, 5000, 5000);
+            Events.ReceivedFChatEvent += Events_ReceivedFChatEvent;
+            Events.ReceivedChatCommand += PluginManager.PassCommandToLoadedPlugins;
+        }
+
+
+        private void Events_ReceivedFChatEvent(object sender, Entities.EventHandlers.ReceivedEventEventArgs e)
+        {
+            Console.WriteLine(e.ToString());
+            switch (e.Event.GetType().Name)
+            {
+                case nameof(FChatSharpLib.Entities.Events.Server.JoinChannel):
+                    var jchEvent = (FChatSharpLib.Entities.Events.Server.JoinChannel)e.Event;
+                    ChannelsInfo.TryAdd(jchEvent.channel, jchEvent.character.ToString());
+                    PluginManager.OnStateUpdate();
+                    break;
+                case nameof(FChatSharpLib.Entities.Events.Server.InitialChannelData):
+                    var ichEvent = (FChatSharpLib.Entities.Events.Server.InitialChannelData)e.Event;
+                    foreach (var identity in ichEvent.users)
+                    {
+                        ChannelsInfo.TryAdd(ichEvent.channel, identity.ToString());
+                    }
+                    PluginManager.OnStateUpdate();
+                    break;
+                default:
+                    break;
+            }
         }
 
         public void Disconnect()
@@ -144,8 +159,14 @@ namespace FChatSharpLib
             WsClient.Close(CloseStatusCode.Normal);
         }
 
+        public void SendPing(Object stateInfo)
+        {
+            SendWsMessage(new Ping()
+            {
+            }.ToString());
+        }
 
-        
+
 
 
 
@@ -155,7 +176,7 @@ namespace FChatSharpLib
 
         public void JoinChannel(string channel)
         {
-            WsClient.Send(new JoinChannel()
+            SendWsMessage(new JoinChannel()
             {
                 channel = channel
             }.ToString());
@@ -163,7 +184,7 @@ namespace FChatSharpLib
 
         public void CreateChannel(string channelTitle)
         {
-            WsClient.Send(new CreateChannel()
+            SendWsMessage(new CreateChannel()
             {
                 channel = channelTitle
             }.ToString());
@@ -171,7 +192,7 @@ namespace FChatSharpLib
 
         public void SendMessage(string message, string channel)
         {
-            WsClient.Send(new Message()
+            SendWsMessage(new Message()
             {
                 message = message,
                 channel = channel
@@ -193,16 +214,33 @@ namespace FChatSharpLib
 
         public bool IsUserMaster(string character)
         {
-            return true;
+            return character.ToLower() == _administratorCharacterName;
         }
 
         public void KickUser(string character, string channel)
         {
-            WsClient.Send(new KickFromChannel()
+            SendWsMessage(new KickFromChannel()
             {
                 character = character,
                 channel = channel
             }.ToString());
+        }
+
+        private async void SendWsMessage(string data)
+        {
+            commandsInQueue++;
+            var currentTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+            if ((currentTime - lastTimeCommandReceived) < floodLimit)
+            {
+                var timeElapsedSinceLastCommand = currentTime - lastTimeCommandReceived;
+                var timeToWait = (commandsInQueue * floodLimit) - timeElapsedSinceLastCommand;
+                await Task.Delay((int)timeToWait * 1000);
+            }
+
+            lastTimeCommandReceived = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            commandsInQueue--;
+            WsClient.Send(data);
         }
 
     }

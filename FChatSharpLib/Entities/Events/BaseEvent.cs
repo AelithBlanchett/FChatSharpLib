@@ -53,25 +53,5 @@ namespace FChatSharpLib.Entities.Events
         {
             return $"{Type} {Data}";
         }
-
-        public static object Deserialize(string content)
-        {
-            var contentType = content.Split(new char[] { ' ' }, 2);
-            object returnedCommand = null;
-            switch (contentType[0].Trim())
-            {
-                case "MSG":
-                    returnedCommand = new Message()
-                    {
-                        Type = "MSG",
-                        Data = contentType[1].Trim()
-                    };
-                    break;
-                default:
-                    break;
-            }
-
-            return returnedCommand;
-        }
     }
 }

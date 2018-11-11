@@ -10,19 +10,19 @@ namespace FChatSharpLib
 {
     public class Events
     {
-        public event EventHandler ReceivedFChatEvent
+        public event EventHandler<ReceivedEventEventArgs> ReceivedFChatEvent
         {
             add { DefaultFChatEventHandler.ReceivedFChatEvent += value; }
             remove { DefaultFChatEventHandler.ReceivedFChatEvent -= value; }
         }
 
-        public event EventHandler<ReceivedPluginCommandEventArgs> ReceivedPluginCommand
+        public event EventHandler<ReceivedPluginCommandEventArgs> ReceivedChatCommand
         {
-            add { DefaultFChatEventHandler.ReceivedPluginCommandEvent += value; }
-            remove { DefaultFChatEventHandler.ReceivedPluginCommandEvent -= value; }
+            add { DefaultFChatEventHandler.ReceivedChatCommand += value; }
+            remove { DefaultFChatEventHandler.ReceivedChatCommand -= value; }
         }
 
-
+        public event EventHandler<EventArgs> ReceivedPluginRequest;
 
 
     }

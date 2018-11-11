@@ -13,37 +13,21 @@ namespace FChatSharpLib.Entities.EventHandlers.FChatEvents
 {
     public static class DefaultFChatEventHandler
     {
-        public static Dictionary<string, Type> KnownEvents;
 
-        public static void DetectEvent(string data)
+        public static void HandleSpecialEvents(string data)
         {
             dynamic detectedEvent = null;
-            Type detectedType = null;
-            var splittedData = data.Split(new char[] { ' ' }, 2);
 
-            if(KnownEvents == null)
-            {
-                KnownEvents = new Dictionary<string, Type>();
-                KnownEvents = GetAllSupportedEvents();
-            }
+            detectedEvent = FChatEventParser.GetParsedEvent(data, true);
 
-            if (splittedData.Length == 2)
-            {
-                if (KnownEvents.ContainsKey(splittedData[0]))
-                {
-                    detectedType = KnownEvents[splittedData[0]];
-                    detectedEvent = JsonConvert.DeserializeObject(splittedData[1], detectedType);
-                }
-            }
-
-            if(detectedEvent != null)
+            if (detectedEvent != null)
             {
                 ReceivedFChatEvent?.Invoke(null, new ReceivedEventEventArgs()
                 {
                     Event = detectedEvent
                 });
 
-                if(detectedType == typeof(Message))
+                if(detectedEvent.GetType() == typeof(Message))
                 {
                     var castedEvent = (Message)detectedEvent;
                     if (castedEvent != null && !string.IsNullOrWhiteSpace(castedEvent.message) && castedEvent.message.StartsWith("!") && castedEvent.message.Remove(0,1).Length > 1)
@@ -61,7 +45,7 @@ namespace FChatSharpLib.Entities.EventHandlers.FChatEvents
 
                         var command = splittedMessage[0];
 
-                        ReceivedPluginCommandEvent?.Invoke(null, new ReceivedPluginCommandEventArgs()
+                        ReceivedChatCommand?.Invoke(null, new ReceivedPluginCommandEventArgs()
                         {
                             Command = command.Remove(0, 1),
                             Arguments = arguments,
@@ -73,30 +57,9 @@ namespace FChatSharpLib.Entities.EventHandlers.FChatEvents
             }
         }
 
-        public static EventHandler ReceivedFChatEvent;
-        public static EventHandler<ReceivedPluginCommandEventArgs> ReceivedPluginCommandEvent;
+        public static EventHandler<ReceivedEventEventArgs> ReceivedFChatEvent;
+        public static EventHandler<ReceivedPluginCommandEventArgs> ReceivedChatCommand;
 
-        private static Type[] GetAllEventTypes()
-        {
-            var serverEvents = Assembly.GetExecutingAssembly().GetTypes().Where(t => String.Equals(t.Namespace, "FChatLib.Entities.Events.Server", StringComparison.Ordinal)).ToArray();
-            return serverEvents;
-        }
 
-        private static Dictionary<string, Type> GetAllSupportedEvents()
-        {
-            var listOfSupportedEvents = new Dictionary<string, Type>();
-            var commandTypes = GetAllEventTypes();
-            foreach (var type in commandTypes)
-            {
-                dynamic obj = Activator.CreateInstance(type);
-                var property = obj.GetType().GetProperty("Type");
-                var value = property.GetValue(obj, null);
-                if (!string.IsNullOrEmpty(value))
-                {
-                    listOfSupportedEvents.Add(value, type);
-                }
-            }
-            return listOfSupportedEvents;
-        }
     }
 }

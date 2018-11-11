@@ -12,33 +12,19 @@ using System.Threading.Tasks;
 
 namespace FChatSharpLib.Entities.Plugin
 {
-    [Serializable]
-    public abstract class BasePlugin : MarshalByRefObject, IPlugin
+    public abstract class BasePlugin : IPlugin
     {
+        private IModel _pubsubChannel;
+
         public IBot FChatClient { get; set; }
         public abstract string Name { get; }
         public abstract string Version { get; }
-        public string Channel { get; set; }
+        public Guid PluginId { get; set; }
 
-        private Guid _pluginId;
-
-        public Guid PluginId
+        public BasePlugin()
         {
-            get
-            {
-                return _pluginId;
-            }
-
-            set
-            {
-                _pluginId = value;
-            }
+            OnPluginLoad();
         }
-
-        
-
-        private IModel _pubsubChannel;
-
 
         private void ReceivedCommand(object model, BasicDeliverEventArgs ea)
         {
@@ -49,7 +35,7 @@ namespace FChatSharpLib.Entities.Plugin
                 var deserializedObject = JsonConvert.DeserializeObject<ReceivedPluginCommandEventArgs>(unparsedMessage);
                 Console.WriteLine($"received: {deserializedObject.Command} in {deserializedObject.Channel} from {deserializedObject.Character} with args: {deserializedObject.Arguments}");
                 Console.WriteLine(" BasePlugin Received {0}", deserializedObject);
-                if (deserializedObject.Channel.ToLower() == Channel.ToLower())
+                if (FChatClient.Channels.Any(x => x.ToLower() == deserializedObject.Channel.ToLower()))
                 {
                     ExecuteCommand(deserializedObject.Command, deserializedObject.Arguments);
                 }
@@ -90,7 +76,8 @@ namespace FChatSharpLib.Entities.Plugin
                     var typeToCreate = types.FirstOrDefault(x => x.Name.ToLower() == command.ToLower());
                     if (typeToCreate != null)
                     {
-                        ICommand instance = (ICommand)Activator.CreateInstance(typeToCreate, this);
+                        ICommand instance = (ICommand)Activator.CreateInstance(typeToCreate);
+                        instance.MyPlugin = this;
                         instance.ExecuteCommand();
                     }
                 }
@@ -104,24 +91,22 @@ namespace FChatSharpLib.Entities.Plugin
             return false;
         }
 
-        //Use this instead of the constructor
-        public void OnPluginLoad(string channel)
+        public void OnPluginLoad()
         {
             PluginId = System.Guid.NewGuid();
             FChatClient = new RemoteBotController();
-            Channel = channel;
 
             var factory = new ConnectionFactory() { HostName = "localhost" };
             var connection = factory.CreateConnection();
             _pubsubChannel = connection.CreateModel();
-            _pubsubChannel.QueueDeclare(queue: "FChatLib.Plugins.ToPlugins",
+            _pubsubChannel.QueueDeclare(queue: "FChatSharpLib.Plugins.ToPlugins",
                                      durable: false,
                                      exclusive: false,
                                      autoDelete: false,
                                      arguments: null);
             var consumer = new EventingBasicConsumer(_pubsubChannel);
             consumer.Received += ReceivedCommand;
-            _pubsubChannel.BasicConsume(queue: "FChatLib.Plugins.ToPlugins",
+            _pubsubChannel.BasicConsume(queue: "FChatSharpLib.Plugins.ToPlugins",
                                  autoAck: true,
                                  consumer: consumer);
         }

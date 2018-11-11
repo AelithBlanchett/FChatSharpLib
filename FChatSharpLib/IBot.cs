@@ -1,9 +1,15 @@
-﻿using WebSocketSharp;
+﻿using System.Collections.Generic;
+using WebSocketSharp;
 
 namespace FChatSharpLib
 {
     public interface IBot
     {
+        Events Events { get; set; }
+
+        Dictionary<string, string> ChannelsInfo { get; set; }
+        IEnumerable<string> Channels { get; }
+
         void Connect();
         void CreateChannel(string channelTitle);
         void Disconnect();

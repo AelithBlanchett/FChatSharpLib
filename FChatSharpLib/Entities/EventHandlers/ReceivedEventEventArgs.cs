@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace FChatSharpLib.Entities.EventHandlers
 {
-    class ReceivedEventEventArgs : EventArgs
+    public class ReceivedEventEventArgs : EventArgs
     {
         public BaseFChatEvent Event;
     }

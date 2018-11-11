@@ -13,7 +13,7 @@ namespace FChatSharpLib.Entities.Plugin
         string Version { get; }
         IBot FChatClient { get; }
         List<string> GetCommandList();
-        void OnPluginLoad(string channel);
+        void OnPluginLoad();
         void OnPluginUnload();
     }
 }

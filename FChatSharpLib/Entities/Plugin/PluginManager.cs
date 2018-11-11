@@ -9,57 +9,100 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using RabbitMQ.Client.Events;
+using FChatSharpLib.Entities.Events;
+using FChatSharpLib.Entities.Events.Server;
 
 namespace FChatSharpLib.Entities.Plugin
 {
-    public class PluginManager : MarshalByRefObject
+    public class PluginManager
     {
 
-        public List<PluginSpawner> PluginSpawnersList;
-
-        //             key=channel     values=pluginName,pluginClass
-        public Dictionary<string, Dictionary<string, BasePlugin>> LoadedPlugins;
-
         private IModel _pubsubChannel;
+        private IBot _bot;
 
         public PluginManager(IBot bot)
         {
-
+            _bot = bot;
             var factory = new ConnectionFactory() { HostName = "localhost" };
             var connection = factory.CreateConnection();
             _pubsubChannel = connection.CreateModel();
-            _pubsubChannel.QueueDeclare(queue: "FChatLib.Plugins.FromPlugins",
+            _pubsubChannel.QueueDeclare(queue: "FChatSharpLib.Plugins.FromPlugins",
                                  durable: false,
                                  exclusive: false,
                                  autoDelete: false,
                                  arguments: null);
-            _pubsubChannel.QueueDeclare(queue: "FChatLib.Plugins.ToPlugins",
+            _pubsubChannel.QueueDeclare(queue: "FChatSharpLib.Plugins.ToPlugins",
                                  durable: false,
                                  exclusive: false,
                                  autoDelete: false,
                                  arguments: null);
+            _pubsubChannel.QueueDeclare(queue: "FChatSharpLib.StateUpdates",
+                                     durable: false,
+                                     exclusive: false,
+                                     autoDelete: false,
+                                     arguments: null);
             var consumer = new EventingBasicConsumer(_pubsubChannel);
-            //consumer.Received += ReceivedCommand;
-            _pubsubChannel.BasicConsume(queue: "FChatLib.Plugins.FromPlugins",
+            consumer.Received += ForwardReceivedCommand;
+            _pubsubChannel.BasicConsume(queue: "FChatSharpLib.Plugins.FromPlugins",
                                  autoAck: true,
                                  consumer: consumer);
-            Bot = bot;
-        }
 
-        public IBot Bot { get; }
+            
+        }
 
         public void PassCommandToLoadedPlugins(object sender, ReceivedPluginCommandEventArgs e)
         {
             string serializedCommand = JsonConvert.SerializeObject(e);
             var body = Encoding.UTF8.GetBytes(serializedCommand);
             _pubsubChannel.BasicPublish(exchange: "",
-                                 routingKey: "FChatLib.Plugins.ToPlugins",
+                                 routingKey: "FChatSharpLib.Plugins.ToPlugins",
                                  basicProperties: null,
                                  body: body);
 
             Console.WriteLine(" PluginManager Sent {0}", serializedCommand);
         }
 
-        
+        public void OnStateUpdate()
+        {
+            string serializedCommand = JsonConvert.SerializeObject(_bot.ChannelsInfo);
+            var body = Encoding.UTF8.GetBytes(serializedCommand);
+            _pubsubChannel.BasicPublish(exchange: "",
+                                 routingKey: "FChatSharpLib.StateUpdates",
+                                 basicProperties: null,
+                                 body: body);
+
+            Console.WriteLine(" PluginManager Sent State Update {0}", serializedCommand);
+        }
+
+
+        private void ForwardReceivedCommand(object model, BasicDeliverEventArgs e)
+        {
+            var body = Encoding.UTF8.GetString(e.Body);
+            try
+            {
+                var command = FChatEventParser.GetParsedEvent(body, false);
+                var commandType = command.GetType().Name;
+
+                switch (commandType)
+                {
+                    case nameof(FChatSharpLib.Entities.Events.Client.Message):
+                        var msgCommand = (FChatSharpLib.Entities.Events.Client.Message)command;
+                        _bot.SendMessage(msgCommand.message, msgCommand.channel);
+                        break;
+                    case nameof(FChatSharpLib.Entities.Events.Client.KickFromChannel):
+                        var kickCommand = (FChatSharpLib.Entities.Events.Client.KickFromChannel)command;
+                        _bot.KickUser(kickCommand.character, kickCommand.channel);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                return;
+            }
+
+        }
+
     }
 }
