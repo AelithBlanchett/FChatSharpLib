@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace FChatSharpLib.Entities.Events.Client
 {
     [Serializable]
-    public class Identification : BaseEvent
+    public class Identification : BaseFChatEvent
     {
         public string method;
         public string account;

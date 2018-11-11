@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace FChatSharpLib.Entities.Events.Client
 {
-    public class Message : BaseEvent
+    public class Message : BaseFChatEvent
     {
         public string message;
         public string channel;

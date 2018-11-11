@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace FChatSharpLib.Entities.Events.Server
 {
-    public class Identification : BaseEvent
+    public class Identification : BaseFChatEvent
     {
         public string character;
 

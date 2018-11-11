@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace FChatSharpLib.Entities.Events.Client
 {
-    class SetStatus : BaseEvent
+    class SetStatus : BaseFChatEvent
     {
         public string status;
         public string statusmsg;

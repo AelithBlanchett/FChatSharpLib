@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace FChatSharpLib.Entities.Events.Client
 {
-    class KickFromChannel : BaseEvent
+    class KickFromChannel : BaseFChatEvent
     {
         public string channel;
         public string character;

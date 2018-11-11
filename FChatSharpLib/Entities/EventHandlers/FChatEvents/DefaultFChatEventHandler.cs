@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace FChatSharpLib.Entities.EventHandlers.FChatEvents
 {
-    public class DefaultFChatEventHandler
+    public static class DefaultFChatEventHandler
     {
         public static Dictionary<string, Type> KnownEvents;
 

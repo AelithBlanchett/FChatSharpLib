@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace FChatSharpLib.Entities.Events
 {
-    public abstract class BaseEvent : IBaseEvent
+    public abstract class BaseFChatEvent : IBaseFChatEvent
     {
         private string _type;
 

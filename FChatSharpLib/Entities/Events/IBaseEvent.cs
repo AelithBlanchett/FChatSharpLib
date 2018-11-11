@@ -1,6 +1,6 @@
 ﻿namespace FChatSharpLib.Entities.Events
 {
-    public interface IBaseEvent
+    public interface IBaseFChatEvent
     {
         string Data { get; }
         string Type { get; set; }

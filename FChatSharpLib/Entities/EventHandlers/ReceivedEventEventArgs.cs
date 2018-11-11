@@ -9,6 +9,6 @@ namespace FChatSharpLib.Entities.EventHandlers
 {
     class ReceivedEventEventArgs : EventArgs
     {
-        public BaseEvent Event;
+        public BaseFChatEvent Event;
     }
 }

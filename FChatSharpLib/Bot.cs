@@ -28,43 +28,13 @@ namespace FChatSharpLib
         private bool _debug;
         private int _delayBetweenEachReconnection;
 
-        private WebSocket wsClient;
+        public IWebSocketEventHandler WSEventHandlers { get; set; }
 
-        //plugin-name is the key, event handler is the value
-        [NonSerialized]
-        private Dictionary<string, IWebSocketEventHandler> _wsEventHandlers;
+        public WebSocket WsClient { get; set; }
 
-        public Dictionary<string, IWebSocketEventHandler> WSEventHandlers
-        {
-            get
-            {
-                return _wsEventHandlers;
-            }
+        public PluginManager PluginManager { get; set; }
 
-            set
-            {
-                _wsEventHandlers = value;
-            }
-        }
-
-        public WebSocket WsClient
-        {
-            get
-            {
-                return wsClient;
-            }
-
-            set
-            {
-                wsClient = value;
-            }
-        }
-
-        [NonSerialized]
-        public PluginManager Plugins;
-
-        [NonSerialized]
-        public Events Events;
+        public Events Events { get; set; }
         private IModel _pubsubChannel;
 
         public Bot(string username, string password, string botCharacterName, string administratorCharacterName)
@@ -75,27 +45,8 @@ namespace FChatSharpLib
             _administratorCharacterName = administratorCharacterName;
             _debug = false;
             _delayBetweenEachReconnection = 4000;
-            WSEventHandlers = new Dictionary<string, IWebSocketEventHandler>();
             Events = new Events();
-
-            var factory = new ConnectionFactory() { HostName = "localhost" };
-            var connection = factory.CreateConnection();
-            _pubsubChannel = connection.CreateModel();
-            _pubsubChannel.QueueDeclare(queue: "FChatLib.Plugins.FromPlugins",
-                                 durable: false,
-                                 exclusive: false,
-                                 autoDelete: false,
-                                 arguments: null);
-            _pubsubChannel.QueueDeclare(queue: "FChatLib.Plugins.ToPlugins",
-                                 durable: false,
-                                 exclusive: false,
-                                 autoDelete: false,
-                                 arguments: null);
-            var consumer = new EventingBasicConsumer(_pubsubChannel);
-            consumer.Received += ReceivedCommand;
-            _pubsubChannel.BasicConsume(queue: "FChatLib.Plugins.FromPlugins",
-                                 autoAck: true,
-                                 consumer: consumer);
+            PluginManager = new PluginManager(this);
         }
 
         public Bot(string username, string password, string botCharacterName, string administratorCharacterName, bool debug, int delayBetweenEachReconnection) : this(username, password, botCharacterName, administratorCharacterName)
@@ -109,7 +60,7 @@ namespace FChatSharpLib
             var body = Encoding.UTF8.GetString(e.Body);
             try
             {
-                var command = BaseEvent.Deserialize(body);
+                var command = BaseFChatEvent.Deserialize(body);
                 var commandType = command.GetType().Name;
 
                 switch (commandType)
@@ -127,30 +78,6 @@ namespace FChatSharpLib
                 return;
             }
             
-        }
-
-        private void InitializePluginManager()
-        {
-            AppDomainSetup domaininfo = new AppDomainSetup()
-            {
-                ApplicationBase = Environment.CurrentDirectory,
-                ShadowCopyDirectories = Environment.CurrentDirectory,
-                ShadowCopyFiles = "true"
-            };
-            Evidence adevidence = AppDomain.CurrentDomain.Evidence;
-            AppDomain domain = AppDomain.CreateDomain($"AD-plugins", adevidence, domaininfo);
-
-            Type type = typeof(TypeProxy);
-            var value = (TypeProxy)domain.CreateInstanceAndUnwrap(
-                type.Assembly.FullName,
-                type.FullName);
-
-            var realType = typeof(PluginManager);
-            var loadedPlugin = domain.CreateInstanceAndUnwrap(realType.Assembly.FullName, realType.FullName, false, BindingFlags.Default, null, new object[] { }, System.Globalization.CultureInfo.CurrentCulture, null);
-
-
-            Plugins = (PluginManager)loadedPlugin;
-
         }
 
         private string GetTicket()
@@ -205,13 +132,11 @@ namespace FChatSharpLib
                 botCreator = _username
             };
 
-            WSEventHandlers.Add("FChatLib.Default", new DefaultWebSocketEventHandler(WsClient, identificationInfo, _delayBetweenEachReconnection));
+            WSEventHandlers = new DefaultWebSocketEventHandler(WsClient, identificationInfo, _delayBetweenEachReconnection);
 
             WsClient.Connect();
 
-            InitializePluginManager();
-
-            Events.ReceivedPluginCommand += Plugins.PassCommandToLoadedPlugins;
+            //InitializePluginManager();
         }
 
         public void Disconnect()
