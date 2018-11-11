@@ -7,7 +7,7 @@ namespace FChatSharp
     {
         static void Main(string[] args)
         {
-            var bot = new Bot("dollydolly", "dollydolly00", "Xo Gisele", "Xo Gisele", true, 4000);
+            var bot = new Bot("dollydolly", "", "Xo Gisele", "Xo Gisele", true, 4000);
             bot.Connect();
             bot.JoinChannel("ADH-55bc847c492faf154406");
             //bot.Plugins.LoadPlugin("test", "ADH-55bc847c492faf154406");
