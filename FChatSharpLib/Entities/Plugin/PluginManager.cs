@@ -64,14 +64,14 @@ namespace FChatSharpLib.Entities.Plugin
 
         public void OnStateUpdate()
         {
-            string serializedCommand = JsonConvert.SerializeObject(_bot.ChannelsInfo);
+            string serializedCommand = JsonConvert.SerializeObject(_bot.State);
             var body = Encoding.UTF8.GetBytes(serializedCommand);
             _pubsubChannel.BasicPublish(exchange: "",
                                  routingKey: "FChatSharpLib.StateUpdates",
                                  basicProperties: null,
                                  body: body);
 
-            Console.WriteLine(" PluginManager Sent State Update {0}", serializedCommand);
+            //Console.WriteLine(" PluginManager Sent State Update {0}", serializedCommand);
         }
 
 

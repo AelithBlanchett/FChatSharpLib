@@ -1,5 +1,6 @@
 ﻿using FChatSharpLib;
 using System;
+using System.Threading.Tasks;
 
 namespace FChatSharp
 {
@@ -7,10 +8,14 @@ namespace FChatSharp
     {
         static void Main(string[] args)
         {
-            var channel = "ADH-0af075f5654a454a6ba5";
-            var bot = new Bot("dollydolly", "", "myrandom", "myrandom", false, 4000);
+            var channel = "ADH-a0d618f7c2e36f8959ea";
+            var bot = new Bot("dollydolly", "dollydolly00", "myrandom", "myrandom", false, 4000);
             bot.Connect();
             //bot.Plugins.LoadPlugin("test", "ADH-55bc847c492faf154406");
+            while (!bot.IsBotReady)
+            {
+                Task.Delay(1000).ConfigureAwait(false);
+            }
             Console.ReadLine();
             //bot.Plugins.ReloadPluginGlobal("test");
             bot.JoinChannel(channel);

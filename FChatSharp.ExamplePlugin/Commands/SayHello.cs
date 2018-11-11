@@ -18,12 +18,10 @@ namespace FChatSharp.ExamplePlugin.Commands
         public override void ExecuteCommand()
         {
             MyPlugin.FChatClient.SendMessage("Hello everyone! Bye!", MyPlugin.FChatClient.Channels.First());
-            MyPlugin.FChatClient.SendMessage("Hello everyone! Bye!", MyPlugin.FChatClient.Channels.First());
-            MyPlugin.FChatClient.SendMessage("Hello everyone! Bye!", MyPlugin.FChatClient.Channels.First());
-            MyPlugin.FChatClient.SendMessage("Hello everyone! Bye!", MyPlugin.FChatClient.Channels.First());
-            MyPlugin.FChatClient.SendMessage("Hello everyone! Bye!", MyPlugin.FChatClient.Channels.First());
-            MyPlugin.FChatClient.SendMessage("Hello everyone! Bye!", MyPlugin.FChatClient.Channels.First());
-            MyPlugin.FChatClient.SendMessage("Hello everyone! Bye!", MyPlugin.FChatClient.Channels.First());
+            MyPlugin.FChatClient.SendMessage($"Here are the current present members: {String.Join(", ", MyPlugin.FChatClient.State.ChannelsInfo.First().CharactersInfo.ToList().Select(x => x.Character))}", MyPlugin.FChatClient.Channels.First());
+            var chanStatus = MyPlugin.FChatClient.State.ChannelsInfo.First().CharactersInfo.ToList().FirstOrDefault(x => x.Character == "Lance Starr");
+            var charStatus = MyPlugin.FChatClient.State.CharactersInfos.ToList().FirstOrDefault(x => x.Character == "Lance Starr");
+            MyPlugin.FChatClient.SendMessage($"Channel Status: {chanStatus.Character + " " + chanStatus.Status}\nGlobal Status: {charStatus.Character + " " + charStatus.Status}", MyPlugin.FChatClient.Channels.First());
             //MyPlugin.FChatClient.KickUser("Lance Starr", MyPlugin.FChatClient.Channels.First());
         }
 

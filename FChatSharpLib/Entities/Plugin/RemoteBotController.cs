@@ -1,4 +1,5 @@
-﻿using FChatSharpLib.Entities.Plugin;
+﻿using FChatSharpLib.Entities.Events.Helpers;
+using FChatSharpLib.Entities.Plugin;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -16,9 +17,17 @@ namespace FChatSharpLib.Plugin
         private IModel _pubsubChannel;
 
         public Events Events { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public Dictionary<string, string> ChannelsInfo { get; set; }
 
-        public IEnumerable<string> Channels => ChannelsInfo.Keys;
+        public IEnumerable<string> Channels => State.ChannelsInfo.Select(x => x.Channel);
+
+        public State State { get; set; }
+        public bool IsBotReady
+        {
+            get
+            {
+                return State != null;
+            }
+        }
 
         public RemoteBotController()
         {
@@ -48,16 +57,13 @@ namespace FChatSharpLib.Plugin
             var unparsedMessage = Encoding.UTF8.GetString(body);
             try
             {
-                var deserializedObject = JsonConvert.DeserializeObject<Dictionary<string, string>>(unparsedMessage);
-                Console.WriteLine($"received: {string.Join(", ", deserializedObject.Keys)}");
-                Console.WriteLine(" BasePlugin Received State Update{0}", deserializedObject);
-                ChannelsInfo = deserializedObject;
+                var deserializedObject = JsonConvert.DeserializeObject<State>(unparsedMessage);
+                State = deserializedObject;
             }
             catch (Exception ex)
             {
                 return;
             }
-
         }
 
         public void SendCommand(string commandJson)

@@ -16,6 +16,8 @@ using RabbitMQ.Client;
 using FChatSharpLib.Entities.Events;
 using System.Threading;
 using System.Threading.Tasks;
+using FChatSharpLib.Entities.Events.Helpers;
+using System.Linq;
 
 namespace FChatSharpLib
 {
@@ -38,16 +40,16 @@ namespace FChatSharpLib
         public WebSocket WsClient { get; set; }
         public PluginManager PluginManager { get; set; }
         public Events Events { get; set; }
-        public Dictionary<string, string> ChannelsInfo { get; set; }
+        public bool IsBotReady { get; set; }
+
+        public State State { get; set; } = new State();
         public IEnumerable<string> Channels
         {
             get
             {
-                return ChannelsInfo.Keys;
+                return State.ChannelsInfo.Select(x => x.Channel);
             }
         }
-
-
 
 
         public Bot(string username, string password, string botCharacterName, string administratorCharacterName)
@@ -59,7 +61,6 @@ namespace FChatSharpLib
             _debug = false;
             _delayBetweenEachReconnection = 4000;
             Events = new Events();
-            ChannelsInfo = new Dictionary<string, string>();
             PluginManager = new PluginManager(this);
         }
 
@@ -133,20 +134,77 @@ namespace FChatSharpLib
 
         private void Events_ReceivedFChatEvent(object sender, Entities.EventHandlers.ReceivedEventEventArgs e)
         {
-            Console.WriteLine(e.ToString());
             switch (e.Event.GetType().Name)
             {
                 case nameof(FChatSharpLib.Entities.Events.Server.JoinChannel):
                     var jchEvent = (FChatSharpLib.Entities.Events.Server.JoinChannel)e.Event;
-                    ChannelsInfo.TryAdd(jchEvent.channel, jchEvent.character.ToString());
+                    State.AddCharacterInChannel(jchEvent.channel, jchEvent.character.identity);
                     PluginManager.OnStateUpdate();
                     break;
                 case nameof(FChatSharpLib.Entities.Events.Server.InitialChannelData):
                     var ichEvent = (FChatSharpLib.Entities.Events.Server.InitialChannelData)e.Event;
-                    foreach (var identity in ichEvent.users)
+                    foreach (var character in ichEvent.users)
                     {
-                        ChannelsInfo.TryAdd(ichEvent.channel, identity.ToString());
+                        State.AddCharacterInChannel(ichEvent.channel, character.identity);
                     }
+                    PluginManager.OnStateUpdate();
+                    break;
+                case nameof(FChatSharpLib.Entities.Events.Server.ConnectedUsers):
+                    var conEvent = (FChatSharpLib.Entities.Events.Server.ConnectedUsers)e.Event;
+                    Console.WriteLine($"{conEvent.count} users connected");
+                    IsBotReady = true;
+                    PluginManager.OnStateUpdate();
+                    break;
+                case nameof(FChatSharpLib.Entities.Events.Server.ListConnectedUsers):
+                    var listEvent = (FChatSharpLib.Entities.Events.Server.ListConnectedUsers)e.Event;
+                    Console.WriteLine($"{listEvent.ToString()} users connected");
+                    foreach (var characterState in listEvent.characters)
+                    {
+                        var existingState = State.CharactersInfos.Find(x => x.Character == characterState.Character);
+                        if (existingState == null)
+                        {
+                            State.CharactersInfos.Add(characterState);
+                        }
+                        else
+                        {
+                            existingState.Gender = characterState.Gender;
+                            existingState.Status = characterState.Status;
+                            existingState.StatusText = characterState.StatusText;
+                        }
+                    }
+                    PluginManager.OnStateUpdate();
+                    break;
+                case nameof(FChatSharpLib.Entities.Events.Server.StatusChanged):
+                    var staEvent = (FChatSharpLib.Entities.Events.Server.StatusChanged)e.Event;
+                    var charInfoSta = State.CharactersInfos.Find(x => x.Character == staEvent.character);
+                    charInfoSta.Status = FChatEventParser.GetEnumEquivalent<StatusEnum>(staEvent.status.ToLower());
+                    charInfoSta.StatusText = charInfoSta.StatusText;
+                    PluginManager.OnStateUpdate();
+                    break;
+                case nameof(FChatSharpLib.Entities.Events.Server.OnlineNotification):
+                    var nlnEvent = (FChatSharpLib.Entities.Events.Server.OnlineNotification)e.Event;
+                    var charInfoNln = State.CharactersInfos.Find(x => x.Character == nlnEvent.identity);
+                    if (charInfoNln == null)
+                    {
+                        charInfoNln = new CharacterState()
+                        {
+                            Character = nlnEvent.identity,
+                            Gender = FChatEventParser.GetEnumEquivalent<GenderEnum>(nlnEvent.gender.ToLower()),
+                            Status = FChatEventParser.GetEnumEquivalent<StatusEnum>(nlnEvent.status.ToLower())
+                        };
+                        State.CharactersInfos.Add(charInfoNln);
+                    }
+                    PluginManager.OnStateUpdate();
+                    break;
+                case nameof(FChatSharpLib.Entities.Events.Server.OfflineNotification):
+                    var flnEvent = (FChatSharpLib.Entities.Events.Server.OfflineNotification)e.Event;
+                    var charInfoFln = State.CharactersInfos.RemoveAll(x => x.Character == flnEvent.character);
+                    State.ChannelsInfo.ForEach(x => x.CharactersInfo.RemoveAll(y => y.Character == flnEvent.character));
+                    PluginManager.OnStateUpdate();
+                    break;
+                case nameof(FChatSharpLib.Entities.Events.Server.LeaveChannel):
+                    var lchEvent = (FChatSharpLib.Entities.Events.Server.LeaveChannel)e.Event;
+                    State.ChannelsInfo.FirstOrDefault(x => x.Channel == lchEvent.channel)?.CharactersInfo.RemoveAll(y => y.Character == lchEvent.character);
                     PluginManager.OnStateUpdate();
                     break;
                 default:

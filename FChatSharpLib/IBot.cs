@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using FChatSharpLib.Entities.Events.Helpers;
+using System.Collections.Generic;
 using WebSocketSharp;
 
 namespace FChatSharpLib
@@ -6,8 +7,8 @@ namespace FChatSharpLib
     public interface IBot
     {
         Events Events { get; set; }
-
-        Dictionary<string, string> ChannelsInfo { get; set; }
+        bool IsBotReady { get; }
+        State State { get; set; }
         IEnumerable<string> Channels { get; }
 
         void Connect();

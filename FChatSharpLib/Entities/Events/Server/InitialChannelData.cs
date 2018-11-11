@@ -10,5 +10,10 @@ namespace FChatSharpLib.Entities.Events.Server
         public IEnumerable<CharacterInfo> users;
         public string channel;
         public string mode;
+
+        public InitialChannelData()
+        {
+            Type = "ICH";
+        }
     }
 }

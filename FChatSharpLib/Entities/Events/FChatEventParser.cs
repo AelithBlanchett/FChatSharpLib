@@ -1,4 +1,7 @@
-﻿using Newtonsoft.Json;
+﻿using FChatSharpLib.Entities.Events.Helpers;
+using FChatSharpLib.Entities.Events.Server;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,11 +28,37 @@ namespace FChatSharpLib.Entities.Events
                 if (KnownEvents.ContainsKey(splittedData[0]))
                 {
                     detectedType = KnownEvents[splittedData[0]];
-                    detectedEvent = JsonConvert.DeserializeObject(splittedData[1], detectedType);
+                    if(detectedType.Name == nameof(ListConnectedUsers)){
+                        dynamic baseEntity = JsonConvert.DeserializeObject(splittedData[1]);
+                        var lisEvent = new ListConnectedUsers();
+                        lisEvent.characters = new List<Helpers.CharacterState>();
+                        foreach (var item in baseEntity.characters)
+                        {
+                            lisEvent.characters.Add(new Helpers.CharacterState()
+                            {
+                                Character = item[0].ToString(),
+                                Gender = GetEnumEquivalent<GenderEnum>(item[1].ToString().ToLower()),
+                                Status = GetEnumEquivalent<StatusEnum>(item[2].ToString().ToLower()),
+                                StatusText = item[3].ToString()
+                            });
+                        }
+                        detectedEvent = lisEvent;
+                    }
+                    else
+                    {
+                        detectedEvent = JsonConvert.DeserializeObject(splittedData[1], detectedType);
+                    } 
                 }
             }
 
             return detectedType != null ? detectedEvent : null;
+        }
+
+        public static T GetEnumEquivalent<T>(string gender) where T : Enum
+        {
+            var availableValues = Enum.GetNames(typeof(T));
+            var realName = availableValues.First(x => x.ToLower().Replace("_", "-") == gender.ToLower().Replace("_", "-"));
+            return (T)Enum.Parse(typeof(T), realName);
         }
 
         private static Type[] GetAllEventTypes(bool serverEntities)
