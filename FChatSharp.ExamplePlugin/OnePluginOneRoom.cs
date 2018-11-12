@@ -13,7 +13,7 @@ namespace FChatSharp.ExamplePlugin
 
         public static void Main(string[] args)
         {
-            Plugin = new ExamplePlugin("adh-a0d618f7c2e36f8959ea");
+            Plugin = new ExamplePlugin("adh-fb2ea279def7c1d17022");
         }
     }
 }

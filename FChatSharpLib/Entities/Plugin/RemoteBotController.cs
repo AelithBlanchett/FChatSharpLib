@@ -1,4 +1,6 @@
-﻿using FChatSharpLib.Entities.Events.Helpers;
+﻿using FChatSharpLib.Entities.EventHandlers;
+using FChatSharpLib.Entities.Events;
+using FChatSharpLib.Entities.Events.Helpers;
 using FChatSharpLib.Entities.Plugin;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
@@ -35,11 +37,48 @@ namespace FChatSharpLib.Plugin
                                      exclusive: false,
                                      autoDelete: false,
                                      arguments: null);
-            var consumer = new EventingBasicConsumer(_pubsubChannel);
-            consumer.Received += StateUpdate_Received;
+            _pubsubChannel.QueueDeclare(queue: "FChatSharpLib.Events",
+                                     durable: false,
+                                     exclusive: false,
+                                     autoDelete: false,
+                                     arguments: null);
+            var consumerState = new EventingBasicConsumer(_pubsubChannel);
+            consumerState.Received += StateUpdate_Received;
             _pubsubChannel.BasicConsume(queue: "FChatSharpLib.StateUpdates",
                                  autoAck: true,
-                                 consumer: consumer);
+                                 consumer: consumerState);
+            var consumerEvents = new EventingBasicConsumer(_pubsubChannel);
+            consumerEvents.Received += RelayServerEvents;
+            _pubsubChannel.BasicConsume(queue: "FChatSharpLib.Events",
+                                 autoAck: true,
+                                 consumer: consumerEvents);
+        }
+
+        //Events
+
+        private void RelayServerEvents(object sender, BasicDeliverEventArgs e)
+        {
+            var body = Encoding.UTF8.GetString(e.Body);
+            try
+            {
+                var command = FChatEventParser.GetParsedEvent(body, true);
+                ReceivedFChatEvent?.Invoke(sender, new ReceivedEventEventArgs()
+                {
+                    Event = command
+                });
+                switch (command.GetType().Name)
+                {
+                    case nameof(Entities.Events.Server.JoinChannel):
+                        UserJoinedChannel?.Invoke(this, (Entities.Events.Server.JoinChannel)command);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            catch(Exception ex)
+            {
+                return;
+            }
         }
 
         private void StateUpdate_Received(object model, BasicDeliverEventArgs ea)
@@ -57,6 +96,14 @@ namespace FChatSharpLib.Plugin
             }
         }
 
+        public EventHandler<ReceivedEventEventArgs> ReceivedFChatEvent;
+
+        public event EventHandler<Entities.Events.Server.JoinChannel> UserJoinedChannel;
+
+
+
+        //Misc
+
         public void SendCommand(string commandJson)
         {
             var body = Encoding.UTF8.GetBytes(commandJson);
@@ -68,18 +115,17 @@ namespace FChatSharpLib.Plugin
 
         public void Connect()
         {
-            //throw new NotImplementedException();
-        }
-
-        public void CreateChannel(string channelTitle)
-        {
             throw new NotImplementedException();
         }
 
         public void Disconnect()
         {
-            //throw new NotImplementedException();
+            throw new NotImplementedException();
         }
+
+
+
+        //Permissions
 
         public bool IsUserAdmin(string character, string channel)
         {
@@ -99,6 +145,19 @@ namespace FChatSharpLib.Plugin
         public bool IsUserOP(string character, string channel)
         {
             return (State.ChannelsInfo.FirstOrDefault(x => x.Channel.ToLower() == channel.ToLower()) != null ? State.ChannelsInfo.FirstOrDefault(x => x.Channel.ToLower() == channel.ToLower()).Operators.Any( x=> x.ToLower() == character.ToLower()) : false);
+        }
+
+
+
+        //Bot commands
+
+        public void CreateChannel(string channelTitle)
+        {
+            var cchCommand = new FChatSharpLib.Entities.Events.Client.CreateChannel()
+            {
+                channel = channelTitle
+            };
+            SendCommand(cchCommand.ToString());
         }
 
         public void JoinChannel(string channel)

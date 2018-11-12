@@ -91,8 +91,6 @@ namespace FChatSharpLib
             return jsonObject.ticket;
         }
 
-        // Connection / Disconnection
-
         public void Connect()
         {
             //Token to authenticate on F-list
@@ -121,12 +119,12 @@ namespace FChatSharpLib
             WsClient.Connect();
 
             _pingTimer = new Timer(SendPing, null, 5000, 5000);
-            Events.ReceivedFChatEvent += Events_ReceivedFChatEvent;
+            Events.ReceivedFChatEvent += Events_ReceivedStateModifyingEvent;
             Events.ReceivedChatCommand += PluginManager.PassCommandToLoadedPlugins;
+            Events.ReceivedFChatEvent += PluginManager.ForwardFChatEventsToPlugin;
         }
 
-
-        private void Events_ReceivedFChatEvent(object sender, Entities.EventHandlers.ReceivedEventEventArgs e)
+        private void Events_ReceivedStateModifyingEvent(object sender, Entities.EventHandlers.ReceivedEventEventArgs e)
         {
             switch (e.Event.GetType().Name)
             {
@@ -134,6 +132,7 @@ namespace FChatSharpLib
                     var jchEvent = (FChatSharpLib.Entities.Events.Server.JoinChannel)e.Event;
                     State.AddCharacterInChannel(jchEvent.channel, jchEvent.character.identity);
                     PluginManager.OnStateUpdate();
+                    UserJoinedChannel?.Invoke(this, jchEvent);
                     break;
                 case nameof(FChatSharpLib.Entities.Events.Server.InitialChannelData):
                     var ichEvent = (FChatSharpLib.Entities.Events.Server.InitialChannelData)e.Event;
@@ -219,25 +218,35 @@ namespace FChatSharpLib
             }
         }
 
-        public void Disconnect()
+
+        //Events
+        public event EventHandler<Entities.Events.Server.JoinChannel> UserJoinedChannel;
+
+
+        // Permissions / Administration
+
+        public bool IsUserAdmin(string character, string channel)
         {
-            WsClient.Close(CloseStatusCode.Normal);
+            return (this.IsUserOP(character, channel) || this.IsUserMaster(character));
         }
 
-        public void SendPing(Object stateInfo)
+        public bool IsUserMaster(string character)
         {
-            SendWsMessage(new Ping()
-            {
-            }.ToString());
+            return character.ToLower() == State.AdminCharacterName.ToLower();
+        }
+
+        public bool IsSelf(string character)
+        {
+            return character.ToLower() == State.BotCharacterName.ToLower();
+        }
+
+        public bool IsUserOP(string character, string channel)
+        {
+            return (State.ChannelsInfo.FirstOrDefault(x => x.Channel.ToLower() == channel.ToLower()) != null ? State.ChannelsInfo.FirstOrDefault(x => x.Channel.ToLower() == channel.ToLower()).Operators.Any(x => x.ToLower() == character.ToLower()) : false);
         }
 
 
-
-
-
-
-
-        // Channel related 
+        // Bot Commands
 
         public void JoinChannel(string channel)
         {
@@ -264,32 +273,6 @@ namespace FChatSharpLib
             }.ToString());
         }
 
-
-        // Permissions / Administration
-
-        public bool IsUserAdmin(string character, string channel)
-        {
-            return (this.IsUserOP(character, channel) || this.IsUserMaster(character));
-        }
-
-        public bool IsUserMaster(string character)
-        {
-            return character.ToLower() == State.AdminCharacterName.ToLower();
-        }
-
-        public bool IsSelf(string character)
-        {
-            return character.ToLower() == State.BotCharacterName.ToLower();
-        }
-
-        public bool IsUserOP(string character, string channel)
-        {
-            return (State.ChannelsInfo.FirstOrDefault(x => x.Channel.ToLower() == channel.ToLower()) != null ? State.ChannelsInfo.FirstOrDefault(x => x.Channel.ToLower() == channel.ToLower()).Operators.Any(x => x.ToLower() == character.ToLower()) : false);
-        }
-
-
-
-
         public void KickUser(string character, string channel)
         {
             SendWsMessage(new KickFromChannel()
@@ -298,6 +281,9 @@ namespace FChatSharpLib
                 channel = channel
             }.ToString());
         }
+
+
+        //Misc
 
         private async void SendWsMessage(string data)
         {
@@ -314,6 +300,18 @@ namespace FChatSharpLib
             lastTimeCommandReceived = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             commandsInQueue--;
             WsClient.Send(data);
+        }
+
+        public void Disconnect()
+        {
+            WsClient.Close(CloseStatusCode.Normal);
+        }
+
+        public void SendPing(Object stateInfo)
+        {
+            SendWsMessage(new Ping()
+            {
+            }.ToString());
         }
 
     }

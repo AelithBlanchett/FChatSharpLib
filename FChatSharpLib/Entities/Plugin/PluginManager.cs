@@ -41,8 +41,13 @@ namespace FChatSharpLib.Entities.Plugin
                                      exclusive: false,
                                      autoDelete: false,
                                      arguments: null);
+            _pubsubChannel.QueueDeclare(queue: "FChatSharpLib.Events",
+                                     durable: false,
+                                     exclusive: false,
+                                     autoDelete: false,
+                                     arguments: null);
             var consumer = new EventingBasicConsumer(_pubsubChannel);
-            consumer.Received += ForwardReceivedCommand;
+            consumer.Received += ForwardReceivedCommandToBot;
             _pubsubChannel.BasicConsume(queue: "FChatSharpLib.Plugins.FromPlugins",
                                  autoAck: true,
                                  consumer: consumer);
@@ -58,8 +63,15 @@ namespace FChatSharpLib.Entities.Plugin
                                  routingKey: "FChatSharpLib.Plugins.ToPlugins",
                                  basicProperties: null,
                                  body: body);
+        }
 
-            Console.WriteLine(" PluginManager Sent {0}", serializedCommand);
+        public void ForwardFChatEventsToPlugin(object sender, ReceivedEventEventArgs e)
+        {
+            var body = Encoding.UTF8.GetBytes(e.Event.ToString());
+            _pubsubChannel.BasicPublish(exchange: "",
+                                 routingKey: "FChatSharpLib.Events",
+                                 basicProperties: null,
+                                 body: body);
         }
 
         public void OnStateUpdate()
@@ -70,12 +82,10 @@ namespace FChatSharpLib.Entities.Plugin
                                  routingKey: "FChatSharpLib.StateUpdates",
                                  basicProperties: null,
                                  body: body);
-
-            //Console.WriteLine(" PluginManager Sent State Update {0}", serializedCommand);
         }
 
 
-        private void ForwardReceivedCommand(object model, BasicDeliverEventArgs e)
+        private void ForwardReceivedCommandToBot(object model, BasicDeliverEventArgs e)
         {
             var body = Encoding.UTF8.GetString(e.Body);
             try

@@ -1,4 +1,5 @@
 ﻿using FChatSharpLib.Entities.Events.Helpers;
+using System;
 using System.Collections.Generic;
 using WebSocketSharp;
 
@@ -19,5 +20,7 @@ namespace FChatSharpLib
         void JoinChannel(string channel);
         void KickUser(string character, string channel);
         void SendMessage(string message, string channel);
+
+        event EventHandler<Entities.Events.Server.JoinChannel> UserJoinedChannel;
     }
 }

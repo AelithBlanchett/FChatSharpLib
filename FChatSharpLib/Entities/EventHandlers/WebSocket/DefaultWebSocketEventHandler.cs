@@ -37,7 +37,6 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
 
         public override void OnMessage(object sender, MessageEventArgs e)
         {
-            //Console.WriteLine(e.Data);
             DefaultFChatEventHandler.HandleSpecialEvents(e.Data);
         }
 

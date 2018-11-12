@@ -37,6 +37,7 @@ namespace FChatSharpLib.Entities.Plugin
         {
             OnPluginLoad();
             Channels = channels;
+            Channel = channels.First();
             var missingJoinedChannels = channels.Select(x => x.ToLower()).Except(FChatClient.State.Channels.Select(x => x.ToLower()));
             foreach (var missingChannel in missingJoinedChannels)
             {

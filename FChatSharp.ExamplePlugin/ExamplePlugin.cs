@@ -27,6 +27,12 @@ namespace FChatSharp.ExamplePlugin
         private void StartTimers()
         {
             _kickMonitor = new Timer(AutoKickNonShemales, null, 1000, 5000);
+            FChatClient.UserJoinedChannel += FChatClient_UserJoinedChannel;
+        }
+
+        private void FChatClient_UserJoinedChannel(object sender, FChatSharpLib.Entities.Events.Server.JoinChannel e)
+        {
+            //FChatClient.SendMessage($"Hey, {e.character.identity} just joined us!", Channel);
         }
 
         private void AutoKickNonShemales(object state)
