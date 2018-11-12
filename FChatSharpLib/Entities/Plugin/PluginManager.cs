@@ -93,6 +93,10 @@ namespace FChatSharpLib.Entities.Plugin
                         var kickCommand = (FChatSharpLib.Entities.Events.Client.KickFromChannel)command;
                         _bot.KickUser(kickCommand.character, kickCommand.channel);
                         break;
+                    case nameof(FChatSharpLib.Entities.Events.Client.JoinChannel):
+                        var joinCommand = (FChatSharpLib.Entities.Events.Client.JoinChannel)command;
+                        _bot.JoinChannel(joinCommand.channel);
+                        break;
                     default:
                         break;
                 }

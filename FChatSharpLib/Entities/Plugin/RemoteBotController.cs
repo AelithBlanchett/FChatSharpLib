@@ -17,17 +17,8 @@ namespace FChatSharpLib.Plugin
         private IModel _pubsubChannel;
 
         public Events Events { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
         public IEnumerable<string> Channels => State.ChannelsInfo.Select(x => x.Channel);
-
         public State State { get; set; }
-        public bool IsBotReady
-        {
-            get
-            {
-                return State != null;
-            }
-        }
 
         public RemoteBotController()
         {

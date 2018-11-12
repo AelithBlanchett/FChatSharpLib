@@ -7,7 +7,6 @@ namespace FChatSharpLib
     public interface IBot
     {
         Events Events { get; set; }
-        bool IsBotReady { get; }
         State State { get; set; }
 
         void Connect();

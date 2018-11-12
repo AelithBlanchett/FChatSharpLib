@@ -12,6 +12,8 @@ namespace FChatSharpLib.Entities.Events.Helpers
 
         public string BotCharacterName { get; set; }
         public string AdminCharacterName { get; set; }
+        public bool IsBotReady { get; set; }
+
 
         public List<CharacterState> GetAllCharactersInChannel(string channel)
         {

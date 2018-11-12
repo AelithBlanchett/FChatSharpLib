@@ -14,30 +14,25 @@ namespace FChatSharp.ExamplePlugin
 
         private Timer _kickMonitor;
 
-        public ExamplePlugin()
+        public ExamplePlugin(string channel) : base(channel)
         {
             _kickMonitor = new Timer(AutoKickNonShemales, null, 1000, 5000);
         }
 
         private void AutoKickNonShemales(object state)
         {
-            
-            foreach (var channel in FChatClient.State.Channels)
+            if (!FChatClient.IsUserAdmin(FChatClient.State.BotCharacterName, Channel))
             {
-                if (!FChatClient.IsUserAdmin(FChatClient.State.BotCharacterName, channel))
+                return;
+            }
+            var characters = FChatClient.State.GetAllCharactersInChannel(Channel);
+            foreach (var character in characters)
+            {
+                if (character.Gender != FChatSharpLib.Entities.Events.Helpers.GenderEnum.Shemale && !FChatClient.IsSelf(character.Character) && !FChatClient.IsUserAdmin(character.Character, Channel))
                 {
-                    continue;
-                }
-                var characters = FChatClient.State.GetAllCharactersInChannel(channel);
-                foreach (var character in characters)
-                {
-                    if(character.Gender != FChatSharpLib.Entities.Events.Helpers.GenderEnum.Shemale && !FChatClient.IsSelf(character.Character) && !FChatClient.IsUserAdmin(character.Character, channel))
-                    {
-                        FChatClient.KickUser(character.Character, channel);
-                    }
+                    FChatClient.KickUser(character.Character, Channel);
                 }
             }
-            
         }
     }
 }

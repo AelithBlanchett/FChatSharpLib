@@ -12,6 +12,8 @@ namespace FChatSharpLib.Entities.Plugin
         string Name { get; }
         string Version { get; }
         IBot FChatClient { get; }
+        string Channel { get; }
+        IEnumerable<string> Channels { get; set; }
         List<string> GetCommandList();
         void OnPluginLoad();
         void OnPluginUnload();

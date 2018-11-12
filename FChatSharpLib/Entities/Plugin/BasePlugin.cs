@@ -17,13 +17,31 @@ namespace FChatSharpLib.Entities.Plugin
         private IModel _pubsubChannel;
 
         public IBot FChatClient { get; set; }
+        public string Channel { get; set; }
+        public IEnumerable<string> Channels { get; set; }
         public abstract string Name { get; }
         public abstract string Version { get; }
         public Guid PluginId { get; set; }
 
-        public BasePlugin()
+        public BasePlugin(string channel)
         {
             OnPluginLoad();
+            Channel = channel;
+            if (!FChatClient.State.Channels.Any(x => x.ToLower() == channel.ToLower()))
+            {
+                FChatClient.JoinChannel(channel);
+            }
+        }
+
+        public BasePlugin(IEnumerable<string> channels)
+        {
+            OnPluginLoad();
+            Channels = channels;
+            var missingJoinedChannels = channels.Select(x => x.ToLower()).Except(FChatClient.State.Channels.Select(x => x.ToLower()));
+            foreach (var missingChannel in missingJoinedChannels)
+            {
+                FChatClient.JoinChannel(missingChannel);
+            }
         }
 
         private void ReceivedCommand(object model, BasicDeliverEventArgs ea)
@@ -33,9 +51,7 @@ namespace FChatSharpLib.Entities.Plugin
             try
             {
                 var deserializedObject = JsonConvert.DeserializeObject<ReceivedPluginCommandEventArgs>(unparsedMessage);
-                Console.WriteLine($"received: {deserializedObject.Command} in {deserializedObject.Channel} from {deserializedObject.Character} with args: {deserializedObject.Arguments}");
-                Console.WriteLine(" BasePlugin Received {0}", deserializedObject);
-                if (FChatClient.State.Channels.Any(x => x.ToLower() == deserializedObject.Channel.ToLower()))
+                if (Channel.ToLower() == deserializedObject.Channel.ToLower())
                 {
                     ExecuteCommand(deserializedObject.Command, deserializedObject.Arguments);
                 }
@@ -53,7 +69,7 @@ namespace FChatSharpLib.Entities.Plugin
             var types = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(s => s.GetTypes())
                 .Where(p => typeof(ICommand).IsAssignableFrom(p));
-            var listOfTypes = types.Select(x => x.Name).Where(x => x != "ICommand" && x != "BaseCommand").Distinct();
+            var listOfTypes = types.Select(x => x.Name).Where(x => x != nameof(ICommand) && x != nameof(BaseCommand)).Distinct();
             return listOfTypes.ToList();
         }
 
@@ -94,7 +110,7 @@ namespace FChatSharpLib.Entities.Plugin
         public void OnPluginLoad()
         {
             PluginId = System.Guid.NewGuid();
-            FChatClient = new RemoteBotController();
+            FChatClient = new RemoteBotController();         
 
             var factory = new ConnectionFactory() { HostName = "localhost" };
             var connection = factory.CreateConnection();
@@ -110,7 +126,7 @@ namespace FChatSharpLib.Entities.Plugin
                                  autoAck: true,
                                  consumer: consumer);
 
-            while (!FChatClient.IsBotReady)
+            while (FChatClient.State == null || !FChatClient.State.IsBotReady)
             {
                 Task.Delay(1000).ConfigureAwait(false);
             }

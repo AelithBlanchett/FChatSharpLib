@@ -6,14 +6,14 @@ using System.Collections.Generic;
 
 namespace FChatSharp.ExamplePlugin
 {
-    class Program
+    class PluginSpawner
     {
 
         public static BasePlugin Plugin { get; set; }
 
         static void Main(string[] args)
         {
-            Plugin = new ExamplePlugin();
+            Plugin = new ExamplePlugin("adh-a0d618f7c2e36f8959ea");
         }
     }
 }

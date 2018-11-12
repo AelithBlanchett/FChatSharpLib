@@ -40,7 +40,6 @@ namespace FChatSharpLib
         public WebSocket WsClient { get; set; }
         public PluginManager PluginManager { get; set; }
         public Events Events { get; set; }
-        public bool IsBotReady { get; set; }
 
         public State State { get; set; } = new State();
 
@@ -146,7 +145,7 @@ namespace FChatSharpLib
                     break;
                 case nameof(FChatSharpLib.Entities.Events.Server.ConnectedUsers):
                     var conEvent = (FChatSharpLib.Entities.Events.Server.ConnectedUsers)e.Event;
-                    IsBotReady = true;
+                    State.IsBotReady = true;
                     PluginManager.OnStateUpdate();
                     break;
                 case nameof(FChatSharpLib.Entities.Events.Server.ListConnectedUsers):

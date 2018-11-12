@@ -22,8 +22,5 @@ namespace FChatSharpLib
             remove { DefaultFChatEventHandler.ReceivedChatCommand -= value; }
         }
 
-        public event EventHandler<EventArgs> ReceivedPluginRequest;
-
-
     }
 }
