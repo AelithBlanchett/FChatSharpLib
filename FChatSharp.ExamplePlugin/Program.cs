@@ -1,19 +1,16 @@
-﻿using FChatSharpLib;
-using FChatSharpLib.Entities.Plugin;
-using FChatSharpLib.Plugin;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace FChatSharp.ExamplePlugin
 {
-    class PluginSpawner
+    class Program
     {
-
-        public static BasePlugin Plugin { get; set; }
-
         static void Main(string[] args)
         {
-            Plugin = new ExamplePlugin("adh-a0d618f7c2e36f8959ea");
+            OnePluginOneRoom.Main(args);
+            //OnePluginMultipleRooms.Main(args);
+            //MultiplePluginsMultipleRooms.Main(args);
         }
     }
 }

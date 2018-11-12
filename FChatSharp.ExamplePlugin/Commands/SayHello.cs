@@ -13,7 +13,7 @@ namespace FChatSharp.ExamplePlugin.Commands
 
         public override string ExampleUsage => "!hello";
 
-        public override BasePlugin MyPlugin { get => PluginSpawner.Plugin; set => PluginSpawner.Plugin = value; }
+        public override BasePlugin MyPlugin { get => OnePluginOneRoom.Plugin; set => OnePluginOneRoom.Plugin = value; }
 
         public override void ExecuteCommand()
         {

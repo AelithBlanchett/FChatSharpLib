@@ -16,6 +16,16 @@ namespace FChatSharp.ExamplePlugin
 
         public ExamplePlugin(string channel) : base(channel)
         {
+            StartTimers();
+        }
+
+        public ExamplePlugin(params string[] channels) : base(channels)
+        {
+            StartTimers();
+        }
+
+        private void StartTimers()
+        {
             _kickMonitor = new Timer(AutoKickNonShemales, null, 1000, 5000);
         }
 
