@@ -35,7 +35,7 @@ namespace FChatSharpLib.Entities.Plugin
                 var deserializedObject = JsonConvert.DeserializeObject<ReceivedPluginCommandEventArgs>(unparsedMessage);
                 Console.WriteLine($"received: {deserializedObject.Command} in {deserializedObject.Channel} from {deserializedObject.Character} with args: {deserializedObject.Arguments}");
                 Console.WriteLine(" BasePlugin Received {0}", deserializedObject);
-                if (FChatClient.Channels.Any(x => x.ToLower() == deserializedObject.Channel.ToLower()))
+                if (FChatClient.State.Channels.Any(x => x.ToLower() == deserializedObject.Channel.ToLower()))
                 {
                     ExecuteCommand(deserializedObject.Command, deserializedObject.Arguments);
                 }
@@ -109,6 +109,11 @@ namespace FChatSharpLib.Entities.Plugin
             _pubsubChannel.BasicConsume(queue: "FChatSharpLib.Plugins.ToPlugins",
                                  autoAck: true,
                                  consumer: consumer);
+
+            while (!FChatClient.IsBotReady)
+            {
+                Task.Delay(1000).ConfigureAwait(false);
+            }
         }
 
         public void OnPluginUnload()

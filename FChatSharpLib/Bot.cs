@@ -43,13 +43,6 @@ namespace FChatSharpLib
         public bool IsBotReady { get; set; }
 
         public State State { get; set; } = new State();
-        public IEnumerable<string> Channels
-        {
-            get
-            {
-                return State.ChannelsInfo.Select(x => x.Channel);
-            }
-        }
 
 
         public Bot(string username, string password, string botCharacterName, string administratorCharacterName)
@@ -62,6 +55,8 @@ namespace FChatSharpLib
             _delayBetweenEachReconnection = 4000;
             Events = new Events();
             PluginManager = new PluginManager(this);
+            State.AdminCharacterName = administratorCharacterName;
+            State.BotCharacterName = _botCharacterName;
         }
 
         public Bot(string username, string password, string botCharacterName, string administratorCharacterName, bool debug, int delayBetweenEachReconnection) : this(username, password, botCharacterName, administratorCharacterName)
@@ -151,16 +146,14 @@ namespace FChatSharpLib
                     break;
                 case nameof(FChatSharpLib.Entities.Events.Server.ConnectedUsers):
                     var conEvent = (FChatSharpLib.Entities.Events.Server.ConnectedUsers)e.Event;
-                    Console.WriteLine($"{conEvent.count} users connected");
                     IsBotReady = true;
                     PluginManager.OnStateUpdate();
                     break;
                 case nameof(FChatSharpLib.Entities.Events.Server.ListConnectedUsers):
                     var listEvent = (FChatSharpLib.Entities.Events.Server.ListConnectedUsers)e.Event;
-                    Console.WriteLine($"{listEvent.ToString()} users connected");
                     foreach (var characterState in listEvent.characters)
                     {
-                        var existingState = State.CharactersInfos.Find(x => x.Character == characterState.Character);
+                        var existingState = State.CharactersInfos.Find(x => x.Character.ToLower() == characterState.Character.ToLower());
                         if (existingState == null)
                         {
                             State.CharactersInfos.Add(characterState);
@@ -176,14 +169,14 @@ namespace FChatSharpLib
                     break;
                 case nameof(FChatSharpLib.Entities.Events.Server.StatusChanged):
                     var staEvent = (FChatSharpLib.Entities.Events.Server.StatusChanged)e.Event;
-                    var charInfoSta = State.CharactersInfos.Find(x => x.Character == staEvent.character);
+                    var charInfoSta = State.CharactersInfos.Find(x => x.Character.ToLower() == staEvent.character.ToLower());
                     charInfoSta.Status = FChatEventParser.GetEnumEquivalent<StatusEnum>(staEvent.status.ToLower());
                     charInfoSta.StatusText = charInfoSta.StatusText;
                     PluginManager.OnStateUpdate();
                     break;
                 case nameof(FChatSharpLib.Entities.Events.Server.OnlineNotification):
                     var nlnEvent = (FChatSharpLib.Entities.Events.Server.OnlineNotification)e.Event;
-                    var charInfoNln = State.CharactersInfos.Find(x => x.Character == nlnEvent.identity);
+                    var charInfoNln = State.CharactersInfos.Find(x => x.Character.ToLower() == nlnEvent.identity.ToLower());
                     if (charInfoNln == null)
                     {
                         charInfoNln = new CharacterState()
@@ -198,13 +191,28 @@ namespace FChatSharpLib
                     break;
                 case nameof(FChatSharpLib.Entities.Events.Server.OfflineNotification):
                     var flnEvent = (FChatSharpLib.Entities.Events.Server.OfflineNotification)e.Event;
-                    var charInfoFln = State.CharactersInfos.RemoveAll(x => x.Character == flnEvent.character);
-                    State.ChannelsInfo.ForEach(x => x.CharactersInfo.RemoveAll(y => y.Character == flnEvent.character));
+                    var charInfoFln = State.CharactersInfos.RemoveAll(x => x.Character.ToLower() == flnEvent.character.ToLower());
+                    State.ChannelsInfo.ForEach(x => x.CharactersInfo.RemoveAll(y => y.Character.ToLower() == flnEvent.character.ToLower()));
                     PluginManager.OnStateUpdate();
                     break;
                 case nameof(FChatSharpLib.Entities.Events.Server.LeaveChannel):
                     var lchEvent = (FChatSharpLib.Entities.Events.Server.LeaveChannel)e.Event;
-                    State.ChannelsInfo.FirstOrDefault(x => x.Channel == lchEvent.channel)?.CharactersInfo.RemoveAll(y => y.Character == lchEvent.character);
+                    State.ChannelsInfo.FirstOrDefault(x => x.Channel.ToLower() == lchEvent.channel.ToLower())?.CharactersInfo.RemoveAll(y => y.Character.ToLower() == lchEvent.character.ToLower());
+                    PluginManager.OnStateUpdate();
+                    break;
+                case nameof(FChatSharpLib.Entities.Events.Server.ChannelOperators):
+                    var colEvent = (FChatSharpLib.Entities.Events.Server.ChannelOperators)e.Event;
+                    State.ChannelsInfo.FirstOrDefault(x => x.Channel.ToLower() == colEvent.channel.ToLower()).Operators = colEvent.oplist;
+                    PluginManager.OnStateUpdate();
+                    break;
+                case nameof(FChatSharpLib.Entities.Events.Server.AddedChanOP):
+                    var coaEvent = (FChatSharpLib.Entities.Events.Server.AddedChanOP)e.Event;
+                    State.ChannelsInfo.FirstOrDefault(x => x.Channel.ToLower() == coaEvent.channel.ToLower()).Operators.Add(coaEvent.character);
+                    PluginManager.OnStateUpdate();
+                    break;
+                case nameof(FChatSharpLib.Entities.Events.Server.RemovedChanOP):
+                    var corEvent = (FChatSharpLib.Entities.Events.Server.RemovedChanOP)e.Event;
+                    State.ChannelsInfo.FirstOrDefault(x => x.Channel.ToLower() == corEvent.channel.ToLower()).Operators.RemoveAll(x => x == corEvent.character.ToLower());
                     PluginManager.OnStateUpdate();
                     break;
                 default:
@@ -265,15 +273,23 @@ namespace FChatSharpLib
             return (this.IsUserOP(character, channel) || this.IsUserMaster(character));
         }
 
-        public bool IsUserOP(string character, string channel)
-        {
-            return true;
-        }
-
         public bool IsUserMaster(string character)
         {
-            return character.ToLower() == _administratorCharacterName;
+            return character.ToLower() == State.AdminCharacterName.ToLower();
         }
+
+        public bool IsSelf(string character)
+        {
+            return character.ToLower() == State.BotCharacterName.ToLower();
+        }
+
+        public bool IsUserOP(string character, string channel)
+        {
+            return (State.ChannelsInfo.FirstOrDefault(x => x.Channel.ToLower() == channel.ToLower()) != null ? State.ChannelsInfo.FirstOrDefault(x => x.Channel.ToLower() == channel.ToLower()).Operators.Any(x => x.ToLower() == character.ToLower()) : false);
+        }
+
+
+
 
         public void KickUser(string character, string channel)
         {

@@ -9,7 +9,6 @@ namespace FChatSharpLib
         Events Events { get; set; }
         bool IsBotReady { get; }
         State State { get; set; }
-        IEnumerable<string> Channels { get; }
 
         void Connect();
         void CreateChannel(string channelTitle);
@@ -17,6 +16,7 @@ namespace FChatSharpLib
         bool IsUserAdmin(string character, string channel);
         bool IsUserMaster(string character);
         bool IsUserOP(string character, string channel);
+        bool IsSelf(string character);
         void JoinChannel(string channel);
         void KickUser(string character, string channel);
         void SendMessage(string message, string channel);

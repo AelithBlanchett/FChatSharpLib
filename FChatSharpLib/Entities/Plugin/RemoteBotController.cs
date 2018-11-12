@@ -92,22 +92,31 @@ namespace FChatSharpLib.Plugin
 
         public bool IsUserAdmin(string character, string channel)
         {
-            throw new NotImplementedException();
+            return (this.IsUserOP(character, channel) || this.IsUserMaster(character));
         }
 
         public bool IsUserMaster(string character)
         {
-            throw new NotImplementedException();
+            return character.ToLower() == State.AdminCharacterName.ToLower();
+        }
+
+        public bool IsSelf(string character)
+        {
+            return character.ToLower() == State.BotCharacterName.ToLower();
         }
 
         public bool IsUserOP(string character, string channel)
         {
-            throw new NotImplementedException();
+            return (State.ChannelsInfo.FirstOrDefault(x => x.Channel.ToLower() == channel.ToLower()) != null ? State.ChannelsInfo.FirstOrDefault(x => x.Channel.ToLower() == channel.ToLower()).Operators.Any( x=> x.ToLower() == character.ToLower()) : false);
         }
 
         public void JoinChannel(string channel)
         {
-            throw new NotImplementedException();
+            var jchCommand = new FChatSharpLib.Entities.Events.Client.JoinChannel()
+            {
+                channel = channel
+            };
+            SendCommand(jchCommand.ToString());
         }
 
         public void KickUser(string character, string channel)

@@ -6,5 +6,6 @@ namespace FChatSharpLib.Entities.Events.Helpers
     {
         public string Channel { get; set; }
         public List<CharacterState> CharactersInfo { get; set; } = new List<CharacterState>();
+        public List<string> Operators { get; set; } = new List<string>();
     }
 }
