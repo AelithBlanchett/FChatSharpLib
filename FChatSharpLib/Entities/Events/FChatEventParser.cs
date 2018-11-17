@@ -1,4 +1,5 @@
-﻿using FChatSharpLib.Entities.Events.Helpers;
+﻿using FChatSharpLib.Entities.EventHandlers;
+using FChatSharpLib.Entities.Events.Helpers;
 using FChatSharpLib.Entities.Events.Server;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -13,6 +14,69 @@ namespace FChatSharpLib.Entities.Events
     public class FChatEventParser
     {
         public static Dictionary<string, Type> KnownEvents;
+
+        public static void HandleSpecialEvents(string data, EventHandler<ReceivedEventEventArgs> ReceivedFChatEventHandler, EventHandler<ReceivedPluginCommandEventArgs> ReceivedChatCommandHandler)
+        {
+            dynamic detectedEvent = null;
+
+            detectedEvent = GetParsedEvent(data, true);
+
+            if (detectedEvent != null)
+            {
+                ReceivedFChatEventHandler?.Invoke(null, new ReceivedEventEventArgs()
+                {
+                    Event = detectedEvent
+                });
+
+                if (detectedEvent.GetType() == typeof(Message) || detectedEvent.GetType() == typeof(PrivateMessage))
+                {
+                    var messageText = "";
+                    var channel = "";
+                    var character = "";
+
+                    if (detectedEvent.GetType() == typeof(Message))
+                    {
+                        var castedEvent = (Message)detectedEvent;
+                        if (castedEvent == null) { return; }
+                        messageText = castedEvent.message;
+                        channel = castedEvent.channel;
+                        character = castedEvent.character;
+                    }
+                    else if (detectedEvent.GetType() == typeof(PrivateMessage))
+                    {
+                        var castedEvent = (PrivateMessage)detectedEvent;
+                        if (castedEvent == null) { return; }
+                        messageText = castedEvent.message;
+                        channel = "";
+                        character = castedEvent.character;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(messageText) && messageText.StartsWith("!") && messageText.Remove(0, 1).Length > 1)
+                    {
+                        var splittedMessage = messageText.Split(new char[] { ' ' }, 2);
+                        var arguments = new string[splittedMessage.Length - 1];
+
+                        if (splittedMessage.Length > 2)
+                        {
+                            for (int i = 1; i < splittedMessage.Length; i++)
+                            {
+                                arguments[i - 1] = splittedMessage[i];
+                            }
+                        }
+
+                        var command = splittedMessage[0];
+
+                        ReceivedChatCommandHandler?.Invoke(null, new ReceivedPluginCommandEventArgs()
+                        {
+                            Command = command.Remove(0, 1),
+                            Arguments = arguments,
+                            Channel = channel,
+                            Character = character
+                        });
+                    }
+                }
+            }
+        }
 
         public static BaseFChatEvent GetParsedEvent(string data, bool serverEntity)
         {
@@ -30,18 +94,33 @@ namespace FChatSharpLib.Entities.Events
                     detectedType = KnownEvents[splittedData[0]];
                     if(detectedType.Name == nameof(ListConnectedUsers)){
                         dynamic baseEntity = JsonConvert.DeserializeObject(splittedData[1]);
-                        var lisEvent = new ListConnectedUsers();
-                        lisEvent.characters = new List<Helpers.CharacterState>();
-                        foreach (var item in baseEntity.characters)
+
+                        //We make sure it's not already correctly parsed
+                        ListConnectedUsers lisEvent = null;
+                        try
                         {
-                            lisEvent.characters.Add(new Helpers.CharacterState()
-                            {
-                                Character = item[0].ToString(),
-                                Gender = GetEnumEquivalent<GenderEnum>(item[1].ToString().ToLower()),
-                                Status = GetEnumEquivalent<StatusEnum>(item[2].ToString().ToLower()),
-                                StatusText = item[3].ToString()
-                            });
+                            lisEvent = JsonConvert.DeserializeObject<ListConnectedUsers>(splittedData[1]);
                         }
+                        catch (Exception)
+                        {
+                        }
+
+                        if(lisEvent == null)
+                        {
+                            lisEvent = new ListConnectedUsers();
+                            lisEvent.characters = new List<Helpers.CharacterState>();
+                            foreach (var item in baseEntity.characters)
+                            {
+                                lisEvent.characters.Add(new Helpers.CharacterState()
+                                {
+                                    Character = item[0].ToString(),
+                                    Gender = GetEnumEquivalent<GenderEnum>(item[1].ToString().ToLower()),
+                                    Status = GetEnumEquivalent<StatusEnum>(item[2].ToString().ToLower()),
+                                    StatusText = item[3].ToString()
+                                });
+                            }
+                        }
+
                         detectedEvent = lisEvent;
                     }
                     else

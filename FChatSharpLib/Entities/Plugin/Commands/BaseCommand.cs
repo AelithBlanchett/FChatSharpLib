@@ -11,6 +11,6 @@ namespace FChatSharpLib.Entities.Plugin.Commands
         public abstract string Description { get; }
         public abstract string ExampleUsage { get; }
         public abstract BasePlugin MyPlugin { get; set; }
-        public abstract void ExecuteCommand();
+        public abstract void ExecuteCommand(string[] args);
     }
 }

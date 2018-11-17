@@ -13,11 +13,9 @@ namespace FChatSharpLib.Entities.Plugin
 {
     public abstract class BasePlugin : IPlugin
     {
-        private IModel _pubsubChannel;
-
         public IBot FChatClient { get; set; }
         public string Channel { get; set; }
-        public IEnumerable<string> Channels { get; set; }
+        public List<string> Channels { get; set; }
         public abstract string Name { get; }
         public abstract string Version { get; }
         public Guid PluginId { get; set; }
@@ -45,7 +43,7 @@ namespace FChatSharpLib.Entities.Plugin
         public BasePlugin(IEnumerable<string> channels)
         {
             OnPluginLoad();
-            Channels = channels;
+            Channels = channels.ToList();
             Channel = channels.First();
             SingleChannelPlugin = false;
             var missingJoinedChannels = channels.Select(x => x.ToLower()).Except(FChatClient.State.Channels.Select(x => x.ToLower()));
@@ -62,10 +60,7 @@ namespace FChatSharpLib.Entities.Plugin
             try
             {
                 var deserializedObject = JsonConvert.DeserializeObject<ReceivedPluginCommandEventArgs>(unparsedMessage);
-                if (Channel.ToLower() == deserializedObject.Channel.ToLower())
-                {
-                    ExecuteCommand(deserializedObject.Command, deserializedObject.Arguments);
-                }
+                
             }
             catch (Exception ex)
             {
@@ -86,8 +81,7 @@ namespace FChatSharpLib.Entities.Plugin
 
         public bool DoesCommandExist(string command)
         {
-            var commandList = GetCommandList();
-            return (commandList.FirstOrDefault(x => x.ToLower() == command.ToLower()) != null);
+            return GetCommandList().Exists(x => x.ToLower() == command.ToLower());
         }
 
         public bool ExecuteCommand(string command, string[] args)
@@ -105,7 +99,7 @@ namespace FChatSharpLib.Entities.Plugin
                     {
                         ICommand instance = (ICommand)Activator.CreateInstance(typeToCreate);
                         instance.MyPlugin = this;
-                        instance.ExecuteCommand();
+                        instance.ExecuteCommand(args);
                     }
                 }
                 catch (Exception ex)
@@ -125,19 +119,7 @@ namespace FChatSharpLib.Entities.Plugin
 
             FChatClient.Connect();
 
-            var factory = new ConnectionFactory() { HostName = "localhost" };
-            var connection = factory.CreateConnection();
-            _pubsubChannel = connection.CreateModel();
-            _pubsubChannel.QueueDeclare(queue: "FChatSharpLib.Plugins.ToPlugins",
-                                     durable: false,
-                                     exclusive: false,
-                                     autoDelete: false,
-                                     arguments: null);
-            var consumer = new EventingBasicConsumer(_pubsubChannel);
-            consumer.Received += ReceivedCommand;
-            _pubsubChannel.BasicConsume(queue: "FChatSharpLib.Plugins.ToPlugins",
-                                 autoAck: true,
-                                 consumer: consumer);
+            FChatClient.Events.ReceivedChatCommand += Events_ReceivedChatCommand;
 
             while (FChatClient.State == null || !FChatClient.State.IsBotReady)
             {
@@ -145,9 +127,27 @@ namespace FChatSharpLib.Entities.Plugin
             }
         }
 
+        private void Events_ReceivedChatCommand(object sender, ReceivedPluginCommandEventArgs e)
+        {
+            if (Channels.Contains(e.Channel, StringComparer.OrdinalIgnoreCase))
+            {
+                ExecuteCommand(e.Command, e.Arguments);
+            }
+        }
+
         public void OnPluginUnload()
         {
-            _pubsubChannel.Close();
+            FChatClient.Events.ReceivedChatCommand -= Events_ReceivedChatCommand;
+        }
+
+        public void AddHandledChannel(string channel)
+        {
+            Channels.Add(channel);
+        }
+
+        public void RemoveHandledChannel(string channel)
+        {
+            Channels.RemoveAll(x => x.ToLower() == channel.ToLower());
         }
     }
 }

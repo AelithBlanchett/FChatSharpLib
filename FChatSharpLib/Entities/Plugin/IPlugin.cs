@@ -13,10 +13,12 @@ namespace FChatSharpLib.Entities.Plugin
         string Version { get; }
         IBot FChatClient { get; }
         string Channel { get; }
-        IEnumerable<string> Channels { get; set; }
+        List<string> Channels { get; set; }
         List<string> GetCommandList();
         void OnPluginLoad();
         void OnPluginUnload();
         bool SingleChannelPlugin { get; set; }
+        void AddHandledChannel(string channel);
+        void RemoveHandledChannel(string channel);
     }
 }

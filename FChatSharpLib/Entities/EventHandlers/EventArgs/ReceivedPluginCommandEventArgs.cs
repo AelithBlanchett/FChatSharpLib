@@ -13,5 +13,11 @@ namespace FChatSharpLib.Entities.EventHandlers
         public string Character;
         public string Command;
         public string[] Arguments;
+        public bool IsPrivateCommand {
+            get
+            {
+                return string.IsNullOrWhiteSpace(Channel);
+            }
+        }
     }
 }
