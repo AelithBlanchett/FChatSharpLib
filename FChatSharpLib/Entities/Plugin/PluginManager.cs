@@ -76,7 +76,8 @@ namespace FChatSharpLib.Entities.Plugin
 
         public void OnStateUpdate()
         {
-            string serializedCommand = JsonConvert.SerializeObject(_bot.State);
+            string serializedCommand = _bot.State.Serialize();
+
             var body = Encoding.UTF8.GetBytes(serializedCommand);
             _pubsubChannel.BasicPublish(exchange: "",
                                  routingKey: "FChatSharpLib.StateUpdates",

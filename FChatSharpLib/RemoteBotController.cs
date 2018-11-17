@@ -12,46 +12,18 @@ using System.Text;
 using System.Threading.Tasks;
 using WebSocketSharp;
 
-namespace FChatSharpLib.Plugin
+namespace FChatSharpLib
 {
     public class RemoteBotController : IBot
     {
         private IModel _pubsubChannel;
 
         public Events Events { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public IEnumerable<string> Channels => State.ChannelsInfo.Select(x => x.Channel);
+        public IEnumerable<string> Channels => State.ChannelsInfo.Select(x => x.Key);
         public State State { get; set; }
 
         public RemoteBotController()
         {
-            var factory = new ConnectionFactory() { HostName = "localhost" };
-            var connection = factory.CreateConnection();
-            _pubsubChannel = connection.CreateModel();
-            _pubsubChannel.QueueDeclare(queue: "FChatSharpLib.Plugins.FromPlugins",
-                                     durable: false,
-                                     exclusive: false,
-                                     autoDelete: false,
-                                     arguments: null);
-            _pubsubChannel.QueueDeclare(queue: "FChatSharpLib.StateUpdates",
-                                     durable: false,
-                                     exclusive: false,
-                                     autoDelete: false,
-                                     arguments: null);
-            _pubsubChannel.QueueDeclare(queue: "FChatSharpLib.Events",
-                                     durable: false,
-                                     exclusive: false,
-                                     autoDelete: false,
-                                     arguments: null);
-            var consumerState = new EventingBasicConsumer(_pubsubChannel);
-            consumerState.Received += StateUpdate_Received;
-            _pubsubChannel.BasicConsume(queue: "FChatSharpLib.StateUpdates",
-                                 autoAck: true,
-                                 consumer: consumerState);
-            var consumerEvents = new EventingBasicConsumer(_pubsubChannel);
-            consumerEvents.Received += RelayServerEvents;
-            _pubsubChannel.BasicConsume(queue: "FChatSharpLib.Events",
-                                 autoAck: true,
-                                 consumer: consumerEvents);
         }
 
         //Events
@@ -115,12 +87,41 @@ namespace FChatSharpLib.Plugin
 
         public void Connect()
         {
-            throw new NotImplementedException();
+            var factory = new ConnectionFactory() { HostName = "localhost" };
+            var connection = factory.CreateConnection();
+            _pubsubChannel = connection.CreateModel();
+            _pubsubChannel.QueueDeclare(queue: "FChatSharpLib.Plugins.FromPlugins",
+                                     durable: false,
+                                     exclusive: false,
+                                     autoDelete: false,
+                                     arguments: null);
+            _pubsubChannel.QueueDeclare(queue: "FChatSharpLib.StateUpdates",
+                                     durable: false,
+                                     exclusive: false,
+                                     autoDelete: false,
+                                     arguments: null);
+            _pubsubChannel.QueueDeclare(queue: "FChatSharpLib.Events",
+                                     durable: false,
+                                     exclusive: false,
+                                     autoDelete: false,
+                                     arguments: null);
+            var consumerState = new EventingBasicConsumer(_pubsubChannel);
+            consumerState.Received += StateUpdate_Received;
+            _pubsubChannel.BasicConsume(queue: "FChatSharpLib.StateUpdates",
+                                 autoAck: true,
+                                 consumer: consumerState);
+            var consumerEvents = new EventingBasicConsumer(_pubsubChannel);
+            consumerEvents.Received += RelayServerEvents;
+            _pubsubChannel.BasicConsume(queue: "FChatSharpLib.Events",
+                                 autoAck: true,
+                                 consumer: consumerEvents);
         }
 
         public void Disconnect()
         {
-            throw new NotImplementedException();
+            _pubsubChannel.Close();
+            _pubsubChannel.Dispose();
+            _pubsubChannel = null;
         }
 
 
@@ -144,7 +145,7 @@ namespace FChatSharpLib.Plugin
 
         public bool IsUserOP(string character, string channel)
         {
-            return (State.ChannelsInfo.FirstOrDefault(x => x.Channel.ToLower() == channel.ToLower()) != null ? State.ChannelsInfo.FirstOrDefault(x => x.Channel.ToLower() == channel.ToLower()).Operators.Any( x=> x.ToLower() == character.ToLower()) : false);
+            return (State.ChannelsInfo.GetValueOrDefault(channel.ToLower()) != null ? State.ChannelsInfo.GetValueOrDefault(channel.ToLower()).Operators.Any( x=> x.ToLower() == character.ToLower()) : false);
         }
 
 

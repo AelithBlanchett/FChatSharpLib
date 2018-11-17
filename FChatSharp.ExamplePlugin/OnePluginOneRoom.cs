@@ -1,8 +1,4 @@
-﻿using FChatSharpLib;
-using FChatSharpLib.Entities.Plugin;
-using FChatSharpLib.Plugin;
-using System;
-using System.Collections.Generic;
+﻿using FChatSharpLib.Entities.Plugin;
 
 namespace FChatSharp.ExamplePlugin
 {
@@ -13,7 +9,7 @@ namespace FChatSharp.ExamplePlugin
 
         public static void Main(string[] args)
         {
-            Plugin = new ExamplePlugin("adh-fb2ea279def7c1d17022");
+            Plugin = new ExamplePlugin("ADH-fed4de54751b458d2dc5");
         }
     }
 }

@@ -17,8 +17,19 @@ namespace FChatSharp.ExamplePlugin.Commands
 
         public override void ExecuteCommand()
         {
-            MyPlugin.FChatClient.SendMessage("Hello everyone! Bye!", MyPlugin.FChatClient.State.Channels.First());
-            MyPlugin.FChatClient.SendMessage($"Here are the current present members: {String.Join(", ", MyPlugin.FChatClient.State.ChannelsInfo.First().CharactersInfo.ToList().Select(x => x.Character))}", MyPlugin.FChatClient.State.Channels.First());
+            foreach (var channel in MyPlugin.Channels)
+            {
+                MyPlugin.FChatClient.SendMessage("Hello everyone! Bye!", channel);
+                var channelInformations = MyPlugin.FChatClient.State.ChannelsInfo.GetValueOrDefault(channel);
+                var informationOfCharactersInChannel = channelInformations.CharactersInfo.ToList();
+                var charactersPresentInChannel = informationOfCharactersInChannel.Select(x => x.Character);
+                MyPlugin.FChatClient.SendMessage($"Here are the current present members: {String.Join(", ", charactersPresentInChannel)}", channel);
+                var statusFromChannelListings = informationOfCharactersInChannel.FirstOrDefault(x => x.Character.ToLower() == "aelith blanchette")?.Status;
+                var statusFromCharacterListings = MyPlugin.FChatClient.State.CharactersInfos.GetValueOrDefault("aelith blanchette")?.Status;
+                MyPlugin.FChatClient.SendMessage($"Here are two methods to access a character's information:", channel);
+                MyPlugin.FChatClient.SendMessage($"Status 1: {statusFromChannelListings}", channel);
+                MyPlugin.FChatClient.SendMessage($"Status 2: {statusFromCharacterListings}", channel);
+            }
         }
 
         public SayHello()

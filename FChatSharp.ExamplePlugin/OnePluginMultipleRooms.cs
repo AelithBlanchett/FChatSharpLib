@@ -1,6 +1,5 @@
 ﻿using FChatSharpLib;
 using FChatSharpLib.Entities.Plugin;
-using FChatSharpLib.Plugin;
 using System;
 using System.Collections.Generic;
 

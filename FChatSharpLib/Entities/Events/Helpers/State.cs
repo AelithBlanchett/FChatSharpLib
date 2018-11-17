@@ -1,14 +1,17 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
 namespace FChatSharpLib.Entities.Events.Helpers
 {
+    [Serializable]
     public class State
     {
-        public List<ChannelState> ChannelsInfo { get; set; } = new List<ChannelState>();
-        public List<CharacterState> CharactersInfos { get; set; } = new List<CharacterState>();
+        public ConcurrentDictionary<string, ChannelState> ChannelsInfo { get; set; } = new ConcurrentDictionary<string, ChannelState>(StringComparer.OrdinalIgnoreCase);
+        public ConcurrentDictionary<string, CharacterState> CharactersInfos { get; set; } = new ConcurrentDictionary<string, CharacterState>(StringComparer.OrdinalIgnoreCase);
 
         public string BotCharacterName { get; set; }
         public string AdminCharacterName { get; set; }
@@ -17,7 +20,7 @@ namespace FChatSharpLib.Entities.Events.Helpers
 
         public List<CharacterState> GetAllCharactersInChannel(string channel)
         {
-            var chanInfo = ChannelsInfo.FirstOrDefault(x => x.Channel.ToLower() == channel.ToLower());
+            var chanInfo = ChannelsInfo.GetValueOrDefault(channel);
             if(chanInfo != null)
             {
                 return chanInfo.CharactersInfo;
@@ -32,42 +35,50 @@ namespace FChatSharpLib.Entities.Events.Helpers
         {
             get
             {
-                return ChannelsInfo.Select(x => x.Channel);
+                return ChannelsInfo.Select(x => x.Key);
             }
         }
 
         public void AddCharacterInChannel(string channel, string character)
         {
-            if(!ChannelsInfo.Any(x => x.Channel.ToLower() == channel.ToLower()))
+            if(!ChannelsInfo.ContainsKey(channel))
             {
-                ChannelsInfo.Add(new ChannelState()
+                ChannelsInfo.TryAdd(channel, new ChannelState()
                 {
-                    Channel = channel.ToLower()
+                    Channel = channel
                 });
             }
 
-            if (!CharactersInfos.Any(x => x.Character.ToLower() == character.ToLower()))
+            if (!CharactersInfos.ContainsKey(character))
             {
-                CharactersInfos.Add(new CharacterState()
+                CharactersInfos.TryAdd(character, new CharacterState()
                 {
-                    Character = character.ToLower()
+                    Character = character
                 });
             }
 
-            var chanInfo = ChannelsInfo.First(x => x.Channel.ToLower() == channel.ToLower());
+            var chanInfo = ChannelsInfo.GetValueOrDefault(channel);
             var charInfo = chanInfo.CharactersInfo.Find(x => x.Character.ToLower() == character.ToLower());
             if(charInfo == null)
             {
-                chanInfo.CharactersInfo.Add(CharactersInfos.First(x => x.Character.ToLower() == character.ToLower()));
+                chanInfo.CharactersInfo.Add(CharactersInfos.GetValueOrDefault(character));
             }
         }
 
         public void RemoveCharacterInChannel(string channel, string character)
         {
-            var chanInfo = ChannelsInfo.FirstOrDefault(x => x.Channel.ToLower() == channel.ToLower());
+            var chanInfo = ChannelsInfo.GetValueOrDefault(channel);
             if (chanInfo != null && chanInfo.CharactersInfo.Any(x => x.Character.ToLower() == character.ToLower()))
             {
                 chanInfo.CharactersInfo.RemoveAll(x => x.Character.ToLower() == character.ToLower());
+            }
+        }
+
+        public string Serialize()
+        {
+            lock (this)
+            {
+                return JsonConvert.SerializeObject(this);
             }
         }
     }

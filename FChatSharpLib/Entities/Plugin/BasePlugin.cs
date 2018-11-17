@@ -1,6 +1,5 @@
 ﻿using FChatSharpLib.Entities.EventHandlers;
 using FChatSharpLib.Entities.Plugin.Commands;
-using FChatSharpLib.Plugin;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -22,11 +21,21 @@ namespace FChatSharpLib.Entities.Plugin
         public abstract string Name { get; }
         public abstract string Version { get; }
         public Guid PluginId { get; set; }
+        public bool SingleChannelPlugin { get; set; }
+        public int ChannelsConnectedTo
+        {
+            get
+            {
+                return Channels.Count();
+            }
+        }
 
         public BasePlugin(string channel)
         {
             OnPluginLoad();
             Channel = channel;
+            Channels = new List<string>() { channel };
+            SingleChannelPlugin = true;
             if (!FChatClient.State.Channels.Any(x => x.ToLower() == channel.ToLower()))
             {
                 FChatClient.JoinChannel(channel);
@@ -38,6 +47,7 @@ namespace FChatSharpLib.Entities.Plugin
             OnPluginLoad();
             Channels = channels;
             Channel = channels.First();
+            SingleChannelPlugin = false;
             var missingJoinedChannels = channels.Select(x => x.ToLower()).Except(FChatClient.State.Channels.Select(x => x.ToLower()));
             foreach (var missingChannel in missingJoinedChannels)
             {
@@ -61,7 +71,7 @@ namespace FChatSharpLib.Entities.Plugin
             {
                 return;
             }
-            
+
         }
 
         public virtual List<string> GetCommandList()
@@ -102,7 +112,7 @@ namespace FChatSharpLib.Entities.Plugin
                 {
                     return false;
                 }
-                
+
                 return true;
             }
             return false;
@@ -111,7 +121,9 @@ namespace FChatSharpLib.Entities.Plugin
         public void OnPluginLoad()
         {
             PluginId = System.Guid.NewGuid();
-            FChatClient = new RemoteBotController();         
+            FChatClient = new RemoteBotController();
+
+            FChatClient.Connect();
 
             var factory = new ConnectionFactory() { HostName = "localhost" };
             var connection = factory.CreateConnection();

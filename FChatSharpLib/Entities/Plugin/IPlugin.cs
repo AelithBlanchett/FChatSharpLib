@@ -17,5 +17,6 @@ namespace FChatSharpLib.Entities.Plugin
         List<string> GetCommandList();
         void OnPluginLoad();
         void OnPluginUnload();
+        bool SingleChannelPlugin { get; set; }
     }
 }
