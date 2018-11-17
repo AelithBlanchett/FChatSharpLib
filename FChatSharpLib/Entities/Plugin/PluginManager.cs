@@ -89,59 +89,7 @@ namespace FChatSharpLib.Entities.Plugin
         private void ForwardReceivedCommandToBot(object model, BasicDeliverEventArgs e)
         {
             var body = Encoding.UTF8.GetString(e.Body);
-            try
-            {
-                var command = FChatEventParser.GetParsedEvent(body, false);
-                var commandType = command.GetType().Name;
-
-                switch (commandType)
-                {
-                    case nameof(FChatSharpLib.Entities.Events.Client.JoinChannel):
-                        var joinCommand = (FChatSharpLib.Entities.Events.Client.JoinChannel)command;
-                        _bot.JoinChannel(joinCommand.channel);
-                        break;
-                    case nameof(FChatSharpLib.Entities.Events.Client.CreateChannel):
-                        var createChanCommand = (FChatSharpLib.Entities.Events.Client.CreateChannel)command;
-                        _bot.CreateChannel(createChanCommand.channel);
-                        break;
-                    case nameof(FChatSharpLib.Entities.Events.Client.Message):
-                        var msgCommand = (FChatSharpLib.Entities.Events.Client.Message)command;
-                        _bot.SendMessageInChannel(msgCommand.message, msgCommand.channel);
-                        break;
-                    case nameof(FChatSharpLib.Entities.Events.Client.PrivateMessage):
-                        var priCommand = (FChatSharpLib.Entities.Events.Client.PrivateMessage)command;
-                        _bot.SendMessageInChannel(priCommand.message, priCommand.recipient);
-                        break;
-                    case nameof(FChatSharpLib.Entities.Events.Client.KickFromChannel):
-                        var kickCommand = (FChatSharpLib.Entities.Events.Client.KickFromChannel)command;
-                        _bot.KickUser(kickCommand.character, kickCommand.channel);
-                        break;
-                    case nameof(FChatSharpLib.Entities.Events.Client.InviteUserToCreatedChannel):
-                        var inviteChanCommand = (FChatSharpLib.Entities.Events.Client.InviteUserToCreatedChannel)command;
-                        _bot.InviteUserToChannel(inviteChanCommand.character, inviteChanCommand.channel);
-                        break;
-                    case nameof(FChatSharpLib.Entities.Events.Client.BanFromChannel):
-                        var banCommand = (FChatSharpLib.Entities.Events.Client.BanFromChannel)command;
-                        _bot.BanUser(banCommand.character, banCommand.channel);
-                        break;
-                    case nameof(FChatSharpLib.Entities.Events.Client.ChangeChannelDescription):
-                        var cdsCommand = (FChatSharpLib.Entities.Events.Client.ChangeChannelDescription)command;
-                        _bot.ChangeChannelDescription(cdsCommand.channel, cdsCommand.description);
-                        break;
-                    case nameof(FChatSharpLib.Entities.Events.Client.ChangeChannelPrivacy):
-                        var rstCommand = (FChatSharpLib.Entities.Events.Client.ChangeChannelPrivacy)command;
-                        _bot.ChangeChannelPrivacy(rstCommand.channel, rstCommand.status == "private");
-                        break;
-                    default:
-                        break;
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-                return;
-            }
-
+            _bot.SendCommandToServer(body);
         }
 
     }
