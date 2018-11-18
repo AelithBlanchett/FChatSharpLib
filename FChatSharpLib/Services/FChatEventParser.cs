@@ -87,54 +87,63 @@ namespace FChatSharpLib.Entities.Events
             KnownEvents = new Dictionary<string, Type>();
             KnownEvents = GetAllSupportedEvents(serverEntity);
 
-            if (splittedData.Length == 2)
+            if (KnownEvents.ContainsKey(splittedData[0]))
             {
-                if (KnownEvents.ContainsKey(splittedData[0]))
+                detectedType = KnownEvents[splittedData[0]];
+                if (detectedType.Name == nameof(ListConnectedUsers))
                 {
-                    detectedType = KnownEvents[splittedData[0]];
-                    if(detectedType.Name == nameof(ListConnectedUsers)){
-                        dynamic baseEntity = JsonConvert.DeserializeObject(splittedData[1]);
+                    dynamic baseEntity = JsonConvert.DeserializeObject(splittedData[1]);
 
-                        //We make sure it's not already correctly parsed
-                        ListConnectedUsers lisEvent = null;
-                        try
-                        {
-                            lisEvent = JsonConvert.DeserializeObject<ListConnectedUsers>(splittedData[1]);
-                        }
-                        catch (Exception)
-                        {
-                        }
-
-                        if(lisEvent == null)
-                        {
-                            lisEvent = new ListConnectedUsers();
-                            lisEvent.characters = new List<Helpers.CharacterState>();
-                            foreach (var item in baseEntity.characters)
-                            {
-                                lisEvent.characters.Add(new Helpers.CharacterState()
-                                {
-                                    Character = item[0].ToString(),
-                                    Gender = GetEnumEquivalent<GenderEnum>(item[1].ToString().ToLower()),
-                                    Status = GetEnumEquivalent<StatusEnum>(item[2].ToString().ToLower()),
-                                    StatusText = item[3].ToString()
-                                });
-                            }
-                        }
-
-                        detectedEvent = lisEvent;
-                    }
-                    else
+                    //We make sure it's not already correctly parsed
+                    ListConnectedUsers lisEvent = null;
+                    try
                     {
-                        try
+                        lisEvent = JsonConvert.DeserializeObject<ListConnectedUsers>(splittedData[1]);
+                    }
+                    catch (Exception)
+                    {
+                    }
+
+                    if (lisEvent == null)
+                    {
+                        lisEvent = new ListConnectedUsers();
+                        lisEvent.characters = new List<Helpers.CharacterState>();
+                        foreach (var item in baseEntity.characters)
                         {
-                            detectedEvent = JsonConvert.DeserializeObject(splittedData[1], detectedType);
+                            lisEvent.characters.Add(new Helpers.CharacterState()
+                            {
+                                Character = item[0].ToString(),
+                                Gender = GetEnumEquivalent<GenderEnum>(item[1].ToString().ToLower()),
+                                Status = GetEnumEquivalent<StatusEnum>(item[2].ToString().ToLower()),
+                                StatusText = item[3].ToString()
+                            });
                         }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine(ex.ToString());
-                        }
-                        
-                    } 
+                    }
+
+                    detectedEvent = lisEvent;
+                }
+                else if(splittedData.Length > 1)
+                {
+                    try
+                    {
+                        detectedEvent = JsonConvert.DeserializeObject(splittedData[1], detectedType);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.ToString());
+                    }
+
+                }
+                else
+                {
+                    try
+                    {
+                        detectedEvent = Activator.CreateInstance(detectedType); 
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.ToString());
+                    }
                 }
             }
 

@@ -29,6 +29,7 @@ namespace FChatSharpLib
         private string _password;
         private bool _debug;
         private int _delayBetweenEachReconnection;
+        private Timer _stateUpdateMonitor;
 
         public Bot(string username, string password, string botCharacterName, string administratorCharacterName) : base(null)
         {
@@ -51,6 +52,15 @@ namespace FChatSharpLib
             Events = new Events(_username, _password, State.BotCharacterName, _debug, _delayBetweenEachReconnection);
             Events.ReceivedPluginRawData += Events_ReceivedPluginRawData;
             base.Connect();
+            _stateUpdateMonitor = new Timer(AutoUpdateState, null, 1000, 5000);
+        }
+
+        private void AutoUpdateState(object state)
+        {
+            DefaultFChatEventHandler.ReceivedStateUpdate?.Invoke(this, new Entities.EventHandlers.ReceivedStateUpdateEventArgs()
+            {
+                State = State
+            });
         }
 
         private void Events_ReceivedPluginRawData(object sender, Entities.EventHandlers.ReceivedPluginRawDataEventArgs e)
