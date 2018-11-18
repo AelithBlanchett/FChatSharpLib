@@ -18,6 +18,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using FChatSharpLib.Entities.Events.Helpers;
 using System.Linq;
+using FChatSharpLib.Entities.EventHandlers.FChatEvents;
+using System.Globalization;
 
 namespace FChatSharpLib
 {
@@ -25,26 +27,17 @@ namespace FChatSharpLib
     {
         private string _username;
         private string _password;
-        private string _botCharacterName;
-        private string _administratorCharacterName;
         private bool _debug;
         private int _delayBetweenEachReconnection;
-
-        private Timer _pingTimer;
-
-        public PluginManager PluginManager { get; set; }
 
         public Bot(string username, string password, string botCharacterName, string administratorCharacterName) : base(null)
         {
             _username = username;
             _password = password;
-            _botCharacterName = botCharacterName;
-            _administratorCharacterName = administratorCharacterName;
             _debug = false;
             _delayBetweenEachReconnection = 4000;
-            PluginManager = new PluginManager(this);
             State.AdminCharacterName = administratorCharacterName;
-            State.BotCharacterName = _botCharacterName;
+            State.BotCharacterName = botCharacterName;
         }
 
         public Bot(string username, string password, string botCharacterName, string administratorCharacterName, bool debug, int delayBetweenEachReconnection) : this(username, password, botCharacterName, administratorCharacterName)
@@ -55,11 +48,14 @@ namespace FChatSharpLib
 
         public override void Connect()
         {
-            Events = new Events(_username, _password, _botCharacterName, _debug, _delayBetweenEachReconnection);
-            _pingTimer = new Timer(SendPing, null, 0, 15000);
-            Events.ReceivedChatCommand += PluginManager.PassCommandToLoadedPlugins;
-            Events.ReceivedFChatEvent += PluginManager.ForwardFChatEventsToPlugin;
+            Events = new Events(_username, _password, State.BotCharacterName, _debug, _delayBetweenEachReconnection);
+            Events.ReceivedPluginRawData += Events_ReceivedPluginRawData;
             base.Connect();
+        }
+
+        private void Events_ReceivedPluginRawData(object sender, Entities.EventHandlers.ReceivedPluginRawDataEventArgs e)
+        {
+            SendCommandToServer(e.jsonData);
         }
 
         public override void Events_ReceivedTriggeringEvent(object sender, Entities.EventHandlers.ReceivedEventEventArgs e)
@@ -140,6 +136,20 @@ namespace FChatSharpLib
                     var corEvent = (FChatSharpLib.Entities.Events.Server.RemovedChanOP)e.Event;
                     State.ChannelsInfo.GetValueOrDefault(corEvent.channel.ToLower()).Operators.RemoveAll(x => x == corEvent.character.ToLower());
                     break;
+                case nameof(FChatSharpLib.Entities.Events.Server.Ping):
+                    SendPing(null);
+                    break;
+                case nameof(FChatSharpLib.Entities.Events.Server.VariableReceived):
+                    var varEvent = (FChatSharpLib.Entities.Events.Server.VariableReceived)e.Event;
+                    switch (varEvent.variable)
+                    {
+                        case "msg_flood":
+                            Events.FloodLimit = double.Parse(varEvent.value, CultureInfo.InvariantCulture);
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
                 default:
                     triggered = false;
                     break;
@@ -147,7 +157,10 @@ namespace FChatSharpLib
 
             if (triggered)
             {
-                PluginManager.OnStateUpdate();
+                DefaultFChatEventHandler.ReceivedStateUpdate?.Invoke(this, new Entities.EventHandlers.ReceivedStateUpdateEventArgs()
+                {
+                    State = State
+                });
             }
 
             base.Events_ReceivedTriggeringEvent(sender, e);

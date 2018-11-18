@@ -125,7 +125,15 @@ namespace FChatSharpLib.Entities.Events
                     }
                     else
                     {
-                        detectedEvent = JsonConvert.DeserializeObject(splittedData[1], detectedType);
+                        try
+                        {
+                            detectedEvent = JsonConvert.DeserializeObject(splittedData[1], detectedType);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.ToString());
+                        }
+                        
                     } 
                 }
             }

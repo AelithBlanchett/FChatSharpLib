@@ -10,6 +10,8 @@ namespace FChatSharpLib
 {
     public class RemoteEvents : IEvents
     {
+        public double FloodLimit { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
         public event EventHandler<ReceivedEventEventArgs> ReceivedFChatEvent
         {
             add { RemoteFChatEventHandler.ReceivedFChatEvent += value; }
@@ -27,6 +29,8 @@ namespace FChatSharpLib
             add { RemoteFChatEventHandler.ReceivedStateUpdate += value; }
             remove { RemoteFChatEventHandler.ReceivedStateUpdate -= value; }
         }
+
+        public event EventHandler<ReceivedPluginRawDataEventArgs> ReceivedPluginRawData;
 
         public void StartListening()
         {

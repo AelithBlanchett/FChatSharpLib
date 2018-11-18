@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 
 namespace FChatSharpLib.Entities.EventHandlers
 {
-    [Serializable]
     public class ReceivedPluginCommandEventArgs : EventArgs
     {
         public string Channel;
