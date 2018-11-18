@@ -8,8 +8,8 @@ namespace FChatSharpLib.GUI.Plugins
 {
     class MainPage : MenuPage
     {
-        public MainPage(BasePlugin program)
-            : base("FChatSharpLib - Plugins - Main Menu", program,
+        public MainPage(BasePlugin program, string pluginName, string pluginVersion)
+            : base($"{pluginName} ({pluginVersion}) - Main Menu", program,
                   new Option("Join a channel", () => program.NavigateTo<JoinChannelPage>()),
                   new Option("Leave a channel", () => program.NavigateTo<LeaveChannelPage>()),
                   new Option("Stop listening to commands in a channel", () => program.NavigateTo<StopListeningChannelPage>()))

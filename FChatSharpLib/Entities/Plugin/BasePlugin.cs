@@ -18,8 +18,8 @@ namespace FChatSharpLib.Entities.Plugin
         public BaseBot FChatClient { get; set; }
         public string Channel { get; set; }
         public List<string> Channels { get; set; }
-        public abstract string Name { get; }
-        public abstract string Version { get; }
+        public string Name { get; set; }
+        public string Version { get; set;  }
         public Guid PluginId { get; set; }
         public bool SingleChannelPlugin
         {
@@ -36,28 +36,34 @@ namespace FChatSharpLib.Entities.Plugin
             }
         }
 
-        public BasePlugin(string channel) : base("FChatSharpLib - Plugin", breadcrumbHeader: true)
+        private void InitializePlugin(string pluginName, string pluginVersion)
         {
-            AddPage(new MainPage(this));
+            Name = pluginName;
+            Version = pluginVersion;
+            AddPage(new MainPage(this, Name, Version));
             AddPage(new JoinChannelPage(this));
             AddPage(new LeaveChannelPage(this));
             AddPage(new StopListeningChannelPage(this));
             SetPage<MainPage>();
             OnPluginLoad();
+        }
+
+        public BasePlugin(string pluginName, string pluginVersion, string channel) : base($"{pluginName} ({pluginVersion})", breadcrumbHeader: true)
+        {
+            InitializePlugin(pluginName, pluginVersion);
             Channel = channel;
             Channels = new List<string>() { channel };
             if (!FChatClient.State.Channels.Any(x => x.ToLower() == channel.ToLower()))
             {
                 FChatClient.JoinChannel(channel);
             }
-            Run();
         }
 
-        public BasePlugin(IEnumerable<string> channels) : base("FChatSharpLib - Plugin", breadcrumbHeader: true)
+        public BasePlugin(string pluginName, string pluginVersion, IEnumerable<string> channels) : base($"{pluginName} ({pluginVersion})", breadcrumbHeader: true)
         {
-            OnPluginLoad();
-            Channels = channels.ToList();
+            InitializePlugin(pluginName, pluginVersion);
             Channel = channels.First();
+            Channels = channels.ToList();
             var missingJoinedChannels = channels.Select(x => x.ToLower()).Except(FChatClient.State.Channels.Select(x => x.ToLower()));
             foreach (var missingChannel in missingJoinedChannels)
             {

@@ -8,20 +8,18 @@ namespace FChatSharp.ExamplePlugin
 {
     class ExamplePlugin : BasePlugin
     {
-        public override string Name => "ExamplePlugin";
-
-        public override string Version => "0.0.1";
-
         private Timer _kickMonitor;
 
-        public ExamplePlugin(string channel) : base(channel)
+        public ExamplePlugin(string channel) : base(nameof(ExamplePlugin), "1.0.0", channel)
         {
             StartTimers();
+            Run();
         }
 
-        public ExamplePlugin(params string[] channels) : base(channels)
+        public ExamplePlugin(params string[] channels) : base(nameof(ExamplePlugin), "1.0.0", channels)
         {
             StartTimers();
+            Run();
         }
 
         private void StartTimers()
