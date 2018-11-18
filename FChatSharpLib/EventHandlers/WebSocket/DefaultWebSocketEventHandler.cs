@@ -16,9 +16,10 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
         public int DelayBetweenEachReconnection { get; set; }
         private Identification _identificationInfo;
 
-        public DefaultWebSocketEventHandler(WebSocketSharp.WebSocket wsClient, Identification identificationInfo, int delayBetweenEachReconnection) : base(wsClient)
+        public DefaultWebSocketEventHandler(WebSocketSharp.WebSocket wsClient, Identification identificationInfo, int delayBetweenEachReconnection, bool debug) : base(wsClient)
         {
             DelayBetweenEachReconnection = delayBetweenEachReconnection;
+            Debug = debug;
             _identificationInfo = identificationInfo;
         }
 
@@ -36,7 +37,10 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
 
         public override void OnMessage(object sender, MessageEventArgs e)
         {
-            Console.WriteLine(e.Data);
+            if (Debug)
+            {
+                Console.WriteLine(e.Data);
+            }
             FChatEventParser.HandleSpecialEvents(e.Data, DefaultFChatEventHandler.ReceivedFChatEvent, DefaultFChatEventHandler.ReceivedChatCommand);
         }
 

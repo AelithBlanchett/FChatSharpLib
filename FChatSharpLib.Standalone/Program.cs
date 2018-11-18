@@ -8,8 +8,7 @@ namespace FChatSharp
     {
         static void Main(string[] args)
         {
-            var bot = new Bot("dollydolly", "", "myrandom", "myrandom", false, 4000);
-            bot.Connect();
+            var bot = new BotHoster("username", "password", "BotCharacterName", "ASuperDeveloper", true, 4000);
         }
     }
 }

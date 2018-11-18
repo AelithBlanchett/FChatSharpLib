@@ -24,6 +24,8 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
             }
         }
 
+        public bool Debug { get; set; }
+
         public BaseWebSocketEventHandler(WebSocketSharp.WebSocket wsClient)
         {
             _webSocketClient = wsClient;

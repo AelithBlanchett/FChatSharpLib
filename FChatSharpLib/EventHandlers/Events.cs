@@ -25,7 +25,7 @@ namespace FChatSharpLib
         private readonly string username;
         private readonly string password;
         private readonly string botCharacterName;
-        private readonly bool debug;
+        private bool debug;
 
         private volatile int commandsInQueue;
         private long lastTimeCommandReceived = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -33,6 +33,20 @@ namespace FChatSharpLib
 
         public IWebSocketEventHandler WSEventHandlers { get; set; }
         public WebSocket WsClient { get; set; }
+        public bool Debug {
+            get
+            {
+                return debug;
+            }
+            set
+            {
+                debug = value;
+                if(WSEventHandlers != null)
+                {
+                    WSEventHandlers.Debug = value;
+                }
+            }
+        }
         public int DelayBetweenEachReconnection { get; }
         public double FloodLimit { get; set; } = 2.0;
 
@@ -41,7 +55,7 @@ namespace FChatSharpLib
             this.username = username;
             this.password = password;
             this.botCharacterName = botCharacterName;
-            this.debug = debug;
+            Debug = debug;
             DelayBetweenEachReconnection = delayBetweenEachReconnection;
             ReceivedStateUpdate += OnStateUpdate;
             ReceivedFChatEvent += ForwardFChatEventsToPlugins;
@@ -114,14 +128,14 @@ namespace FChatSharpLib
             };
 
             int port = 9722;
-            if (debug == true)
+            if (Debug == true)
             {
                 port = 8722;
             }
 
             WsClient = new WebSocket($"ws://chat.f-list.net:{port}");
 
-            WSEventHandlers = new DefaultWebSocketEventHandler(WsClient, identificationInfo, DelayBetweenEachReconnection);
+            WSEventHandlers = new DefaultWebSocketEventHandler(WsClient, identificationInfo, DelayBetweenEachReconnection, Debug);
 
             WsClient.Connect();
         }
@@ -149,7 +163,7 @@ namespace FChatSharpLib
             lastTimeCommandReceived = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             commandsInQueue--;
             WsClient.Send(commandJson);
-            if (debug)
+            if (Debug)
             {
                 Console.WriteLine("SENT: " + commandJson);
             }

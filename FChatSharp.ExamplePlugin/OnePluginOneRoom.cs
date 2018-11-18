@@ -9,7 +9,7 @@ namespace FChatSharp.ExamplePlugin
 
         public static void Main(string[] args)
         {
-            Plugin = new ExamplePlugin("ADH-4358b65b80c8f9920288");
+            Plugin = new ExamplePlugin("ADH-00fd6ec104cce5da508f");
         }
     }
 }

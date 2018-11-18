@@ -38,7 +38,7 @@ namespace FChatSharp.ExamplePlugin
 
         private void FChatClient_BotCreatedChannel(object sender, FChatSharpLib.Entities.Events.Server.InitialChannelData e)
         {
-            FChatClient.ChangeChannelPrivacy(e.channel, false);
+            FChatClient.ChangeChannelPrivacy(false, e.channel);
         }
 
         private void AutoKickNonShemales(object state)

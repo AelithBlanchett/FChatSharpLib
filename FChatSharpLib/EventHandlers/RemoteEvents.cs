@@ -11,6 +11,7 @@ namespace FChatSharpLib
     public class RemoteEvents : IEvents
     {
         public double FloodLimit { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public bool Debug { get; set; }
 
         public event EventHandler<ReceivedEventEventArgs> ReceivedFChatEvent
         {
@@ -44,6 +45,10 @@ namespace FChatSharpLib
 
         public void SendCommand(string commandJson)
         {
+            if (Debug)
+            {
+                Console.WriteLine("REMOTE SENT TO HOST: " + commandJson);
+            }
             RemoteFChatEventHandler.SendJsonCommand(commandJson);
         }
     }

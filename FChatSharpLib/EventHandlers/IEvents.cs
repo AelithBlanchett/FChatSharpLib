@@ -6,6 +6,7 @@ namespace FChatSharpLib
     public interface IEvents
     {
         double FloodLimit { get; set; }
+        bool Debug { get; set; }
 
         event EventHandler<ReceivedPluginCommandEventArgs> ReceivedChatCommand;
         event EventHandler<ReceivedEventEventArgs> ReceivedFChatEvent;

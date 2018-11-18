@@ -10,7 +10,7 @@ namespace FChatSharpLib.Entities.Plugin.Commands
     {
         string Description { get; }
         string ExampleUsage { get; }
-        void ExecuteCommand(string[] args);
+        void ExecuteCommand(string[] args, string channel);
         BasePlugin MyPlugin { get; set; }
     }
 }

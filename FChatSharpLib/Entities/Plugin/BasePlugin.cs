@@ -1,5 +1,7 @@
-﻿using FChatSharpLib.Entities.EventHandlers;
+﻿using EasyConsole;
+using FChatSharpLib.Entities.EventHandlers;
 using FChatSharpLib.Entities.Plugin.Commands;
+using FChatSharpLib.GUI.Plugins;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -11,15 +13,21 @@ using System.Threading.Tasks;
 
 namespace FChatSharpLib.Entities.Plugin
 {
-    public abstract class BasePlugin : IPlugin
+    public abstract class BasePlugin : Program, IPlugin
     {
-        public IBot FChatClient { get; set; }
+        public BaseBot FChatClient { get; set; }
         public string Channel { get; set; }
         public List<string> Channels { get; set; }
         public abstract string Name { get; }
         public abstract string Version { get; }
         public Guid PluginId { get; set; }
-        public bool SingleChannelPlugin { get; set; }
+        public bool SingleChannelPlugin
+        {
+            get
+            {
+                return Channels.Count == 1;
+            }
+        }
         public int ChannelsConnectedTo
         {
             get
@@ -28,24 +36,28 @@ namespace FChatSharpLib.Entities.Plugin
             }
         }
 
-        public BasePlugin(string channel)
+        public BasePlugin(string channel) : base("FChatSharpLib - Plugin", breadcrumbHeader: true)
         {
+            AddPage(new MainPage(this));
+            AddPage(new JoinChannelPage(this));
+            AddPage(new LeaveChannelPage(this));
+            AddPage(new StopListeningChannelPage(this));
+            SetPage<MainPage>();
             OnPluginLoad();
             Channel = channel;
             Channels = new List<string>() { channel };
-            SingleChannelPlugin = true;
             if (!FChatClient.State.Channels.Any(x => x.ToLower() == channel.ToLower()))
             {
                 FChatClient.JoinChannel(channel);
             }
+            Run();
         }
 
-        public BasePlugin(IEnumerable<string> channels)
+        public BasePlugin(IEnumerable<string> channels) : base("FChatSharpLib - Plugin", breadcrumbHeader: true)
         {
             OnPluginLoad();
             Channels = channels.ToList();
             Channel = channels.First();
-            SingleChannelPlugin = false;
             var missingJoinedChannels = channels.Select(x => x.ToLower()).Except(FChatClient.State.Channels.Select(x => x.ToLower()));
             foreach (var missingChannel in missingJoinedChannels)
             {
@@ -84,7 +96,7 @@ namespace FChatSharpLib.Entities.Plugin
             return GetCommandList().Exists(x => x.ToLower() == command.ToLower());
         }
 
-        public bool ExecuteCommand(string command, string[] args)
+        public bool ExecuteCommand(string command, string[] args, string channel)
         {
             if (DoesCommandExist(command))
             {
@@ -99,7 +111,7 @@ namespace FChatSharpLib.Entities.Plugin
                     {
                         ICommand instance = (ICommand)Activator.CreateInstance(typeToCreate);
                         instance.MyPlugin = this;
-                        instance.ExecuteCommand(args);
+                        instance.ExecuteCommand(args, channel);
                     }
                 }
                 catch (Exception ex)
@@ -131,7 +143,7 @@ namespace FChatSharpLib.Entities.Plugin
         {
             if (Channels.Contains(e.Channel, StringComparer.OrdinalIgnoreCase))
             {
-                ExecuteCommand(e.Command, e.Arguments);
+                ExecuteCommand(e.Command, e.Arguments, e.Channel);
             }
         }
 

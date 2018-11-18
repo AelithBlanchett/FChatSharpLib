@@ -15,7 +15,7 @@ namespace FChatSharp.ExamplePlugin.Commands
 
         public override BasePlugin MyPlugin { get => OnePluginOneRoom.Plugin; set => OnePluginOneRoom.Plugin = value; }
 
-        public override void ExecuteCommand(string[] args)
+        public override void ExecuteCommand(string[] args, string channel)
         {
             MyPlugin.FChatClient.CreateChannel("My super channel");
         }

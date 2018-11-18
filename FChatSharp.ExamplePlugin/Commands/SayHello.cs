@@ -15,21 +15,20 @@ namespace FChatSharp.ExamplePlugin.Commands
 
         public override BasePlugin MyPlugin { get => OnePluginOneRoom.Plugin; set => OnePluginOneRoom.Plugin = value; }
 
-        public override void ExecuteCommand(string[] args)
+        public override void ExecuteCommand(string[] args, string channel)
         {
-            foreach (var channel in MyPlugin.Channels)
-            {
-                MyPlugin.FChatClient.SendMessageInChannel("Hello everyone! Bye!", channel);
-                var channelInformations = MyPlugin.FChatClient.State.ChannelsInfo.GetValueOrDefault(channel);
-                var informationOfCharactersInChannel = channelInformations.CharactersInfo.ToList();
-                var charactersPresentInChannel = informationOfCharactersInChannel.Select(x => x.Character);
-                MyPlugin.FChatClient.SendMessageInChannel($"Here are the current present members: {String.Join(", ", charactersPresentInChannel)}", channel);
-                var statusFromChannelListings = informationOfCharactersInChannel.FirstOrDefault(x => x.Character.ToLower() == "aelith blanchette")?.Status;
-                var statusFromCharacterListings = MyPlugin.FChatClient.State.CharactersInfos.GetValueOrDefault("aelith blanchette")?.Status;
-                MyPlugin.FChatClient.SendMessageInChannel($"Here are two methods to access a character's information:", channel);
-                MyPlugin.FChatClient.SendMessageInChannel($"Status 1: {statusFromChannelListings}", channel);
-                MyPlugin.FChatClient.SendMessageInChannel($"Status 2: {statusFromCharacterListings}", channel);
-            }
+            MyPlugin.FChatClient.SendMessageInChannel("Hello everyone! Bye!", channel);
+            var channelInformations = MyPlugin.FChatClient.State.ChannelsInfo.GetValueOrDefault(channel);
+            var informationOfCharactersInChannel = channelInformations.CharactersInfo.ToList();
+            var charactersPresentInChannel = informationOfCharactersInChannel.Select(x => x.Character);
+            MyPlugin.FChatClient.SendMessageInChannel($"Here are the current present members: {String.Join(", ", charactersPresentInChannel)}", channel);
+            var statusFromChannelListings = informationOfCharactersInChannel.FirstOrDefault(x => x.Character.ToLower() == "aelith blanchette")?.Status;
+            var statusFromCharacterListings = MyPlugin.FChatClient.State.CharactersInfos.GetValueOrDefault("aelith blanchette")?.Status;
+            MyPlugin.FChatClient.SendMessageInChannel($"Here are two methods to access a character's information:", channel);
+            MyPlugin.FChatClient.SendMessageInChannel($"Status 1: {statusFromChannelListings}", channel);
+            MyPlugin.FChatClient.SendMessageInChannel($"Status 2: {statusFromCharacterListings}", channel);
+            MyPlugin.FChatClient.SetStatus(FChatSharpLib.Entities.Events.Helpers.StatusEnum.Busy, "Busy!");
+            MyPlugin.FChatClient.RollDice("1d33", channel);
         }
 
         public SayHello()

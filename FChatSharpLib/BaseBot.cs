@@ -22,7 +22,7 @@ using System.Linq;
 namespace FChatSharpLib
 {
 
-    public abstract class BaseBot : IBot
+    public abstract class BaseBot
     {
         private int numberOfChannelsToTreatAsNewlyCreatedChannel = 0;
 
@@ -91,6 +91,10 @@ namespace FChatSharpLib
                     var corEvent = (FChatSharpLib.Entities.Events.Server.RemovedChanOP)e.Event;
                     RemovedOPInChannel?.Invoke(this, corEvent);
                     break;
+                case nameof(Entities.Events.Server.RollResult):
+                    var rllEvent = (FChatSharpLib.Entities.Events.Server.RollResult)e.Event;
+                    RollResultReceived?.Invoke(this, rllEvent);
+                    break;
                 default:
                     break;
             }
@@ -108,6 +112,7 @@ namespace FChatSharpLib
         public event EventHandler<Entities.Events.Server.RemovedChanOP> RemovedOPInChannel;
         public event EventHandler<Entities.Events.Server.InitialChannelData> BotCreatedChannel;
         public event EventHandler<EventArgs> BotConnected;
+        public event EventHandler<Entities.Events.Server.RollResult> RollResultReceived;
 
 
         // Permissions / Administration
@@ -197,7 +202,7 @@ namespace FChatSharpLib
             }.ToString());
         }
 
-        public void ChangeChannelDescription(string channel, string description)
+        public void ChangeChannelDescription(string description, string channel)
         {
             SendCommandToServer(new ChangeChannelDescription()
             {
@@ -206,12 +211,66 @@ namespace FChatSharpLib
             }.ToString());
         }
 
-        public void ChangeChannelPrivacy(string channel, bool isPrivate)
+        public void ChangeChannelPrivacy(bool isPrivate, string channel)
         {
             SendCommandToServer(new ChangeChannelPrivacy()
             {
                 status = (isPrivate ? "private" : "public"),
                 channel = channel
+            }.ToString());
+        }
+
+        public void LeaveChannel(string channel)
+        {
+            SendCommandToServer(new LeaveChannel()
+            {
+                channel = channel
+            }.ToString());
+        }
+
+        public void RollDice(string dice, string channel)
+        {
+            SendCommandToServer(new RollDice()
+            {
+                channel = channel,
+                dice = dice
+            }.ToString());
+        }
+
+        public void SpinBottle(string channel)
+        {
+            SendCommandToServer(new RollDice()
+            {
+                channel = channel,
+                dice = "bottle"
+            }.ToString());
+        }
+
+        public void SetStatus(StatusEnum status, string statusText)
+        {
+            SendCommandToServer(new SetStatus()
+            {
+                status = status.ToString(),
+                statusmsg = statusText
+            }.ToString());
+        }
+
+        public void UnbanUser(string character, string channel)
+        {
+            SendCommandToServer(new UnbanFromChannel()
+            {
+                character = character,
+                channel = channel
+            }.ToString());
+        }
+
+        public void TempBanUser(string character, int lengthInMinutes, string channel)
+        {
+            SendCommandToServer(new TempBanFromChannel()
+            {
+                character = character,
+                channel = channel,
+                length = lengthInMinutes.ToString()
             }.ToString());
         }
 
