@@ -9,8 +9,7 @@ namespace FChatSharp.ExamplePlugin.Commands
 {
     class SayHello : BaseCommand<ExamplePlugin> 
     {
-        public string Description => "Says hello to the room.";
-        public string ExampleUsage => "!SayHello";
+        public override string Description => "Says hello to the room.";
 
         public override void ExecuteCommand(string character, string[] args, string channel)
         {
@@ -26,11 +25,6 @@ namespace FChatSharp.ExamplePlugin.Commands
             Plugin.FChatClient.SendMessageInChannel($"Status 2: {statusFromCharacterListings}", channel);
             Plugin.FChatClient.SetStatus(FChatSharpLib.Entities.Events.Helpers.StatusEnum.Busy, "Busy!");
             Plugin.FChatClient.RollDice("1d33", channel);
-        }
-
-        public SayHello()
-        {
-
         }
     }
 }
