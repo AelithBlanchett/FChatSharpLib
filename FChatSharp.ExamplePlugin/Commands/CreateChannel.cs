@@ -7,17 +7,15 @@ using System.Text;
 
 namespace FChatSharp.ExamplePlugin.Commands
 {
-    class CreateChannel : BaseCommand
+    class CreateChannel : BaseCommand<ExamplePlugin>
     {
-        public override string Description => "Creates a Channel";
+        public string Description => "Creates a Channel";
 
-        public override string ExampleUsage => "!CreateChannel";
+        public string ExampleUsage => "!CreateChannel";
 
-        public override BasePlugin MyPlugin { get => OnePluginOneRoom.Plugin; set => OnePluginOneRoom.Plugin = value; }
-
-        public override void ExecuteCommand(string[] args, string channel)
+        public override void ExecuteCommand(string character, string[] args, string channel)
         {
-            MyPlugin.FChatClient.CreateChannel("My super channel");
+            Plugin.FChatClient.CreateChannel("My super channel");
         }
 
         public CreateChannel()

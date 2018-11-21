@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace FChatSharpLib.Entities.Plugin.Commands
 {
-    public abstract class BaseCommand : ICommand
+    public abstract class BaseCommand<TPlugin> where TPlugin : BasePlugin, new()
     {
-        public abstract string Description { get; }
-        public abstract string ExampleUsage { get; }
-        public abstract BasePlugin MyPlugin { get; set; }
-        public abstract void ExecuteCommand(string[] args, string channel);
+        public virtual string Description { get; }
+        public virtual string ExampleUsage { get; }
+        public TPlugin Plugin { get; set; }
+        public abstract void ExecuteCommand(string characterCalling, string[] args, string channel);
     }
 }

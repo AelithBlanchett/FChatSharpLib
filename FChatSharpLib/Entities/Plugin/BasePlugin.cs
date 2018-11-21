@@ -8,6 +8,7 @@ using RabbitMQ.Client.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -87,13 +88,30 @@ namespace FChatSharpLib.Entities.Plugin
 
         }
 
+        private bool IsAssignableToGenericType(Type givenType, Type genericType)
+        {
+            var interfaceTypes = givenType.GetInterfaces();
+
+            foreach (var it in interfaceTypes)
+            {
+                if (it.IsGenericType && it.GetGenericTypeDefinition() == genericType)
+                    return true;
+            }
+
+            if (givenType.IsGenericType && givenType.GetGenericTypeDefinition() == genericType)
+                return true;
+
+            Type baseType = givenType.BaseType;
+            if (baseType == null) return false;
+
+            return IsAssignableToGenericType(baseType, genericType);
+        }
+
         public virtual List<string> GetCommandList()
         {
-            var type = typeof(ICommand);
-            var types = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(s => s.GetTypes())
-                .Where(p => typeof(ICommand).IsAssignableFrom(p));
-            var listOfTypes = types.Select(x => x.Name).Where(x => x != nameof(ICommand) && x != nameof(BaseCommand)).Distinct();
+            var type = typeof(BaseCommand<>);
+            var types = AppDomain.CurrentDomain.GetAssemblies().SelectMany(s => s.GetTypes()).Where(p => IsAssignableToGenericType(p, typeof(BaseCommand<>)));
+            var listOfTypes = types.Select(x => x.Name).Where(x => x != "BaseCommand`1").Distinct();
             return listOfTypes.ToList();
         }
 
@@ -102,22 +120,21 @@ namespace FChatSharpLib.Entities.Plugin
             return GetCommandList().Exists(x => x.ToLower() == command.ToLower());
         }
 
-        public bool ExecuteCommand(string command, string[] args, string channel)
+        public bool ExecuteCommand(string characterCalling, string command, string[] args, string channel)
         {
             if (DoesCommandExist(command))
             {
                 try
                 {
-                    var searchedType = typeof(ICommand);
-                    var types = AppDomain.CurrentDomain.GetAssemblies()
-                                .SelectMany(s => s.GetTypes())
-                                .Where(p => typeof(ICommand).IsAssignableFrom(p));
+                    var thisType = this.GetType();
+                    var searchedType = typeof(BaseCommand<>);
+                    var types = AppDomain.CurrentDomain.GetAssemblies().SelectMany(s => s.GetTypes()).Where(p => IsAssignableToGenericType(p, typeof(BaseCommand<>)));
                     var typeToCreate = types.FirstOrDefault(x => x.Name.ToLower() == command.ToLower());
                     if (typeToCreate != null)
                     {
-                        ICommand instance = (ICommand)Activator.CreateInstance(typeToCreate);
-                        instance.MyPlugin = this;
-                        instance.ExecuteCommand(args, channel);
+                        var instance = Activator.CreateInstance(typeToCreate);
+                        instance.GetType().InvokeMember(nameof(BaseCommand<DummyPlugin>.Plugin), BindingFlags.Instance | BindingFlags.Public | BindingFlags.SetProperty, Type.DefaultBinder, instance, new object[] { this });
+                        instance.GetType().InvokeMember(nameof(BaseCommand<DummyPlugin>.ExecuteCommand), BindingFlags.Instance | BindingFlags.Public | BindingFlags.InvokeMethod, Type.DefaultBinder, instance, new object[] { characterCalling, args, channel });
                     }
                 }
                 catch (Exception ex)
@@ -149,7 +166,7 @@ namespace FChatSharpLib.Entities.Plugin
         {
             if (Channels.Contains(e.Channel, StringComparer.OrdinalIgnoreCase))
             {
-                ExecuteCommand(e.Command, e.Arguments, e.Channel);
+                ExecuteCommand(e.Character, e.Command, e.Arguments, e.Channel);
             }
         }
 
