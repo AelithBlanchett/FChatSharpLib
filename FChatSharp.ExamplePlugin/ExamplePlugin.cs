@@ -10,13 +10,13 @@ namespace FChatSharp.ExamplePlugin
     {
         private Timer _kickMonitor;
 
-        public ExamplePlugin(string channel) : base(nameof(ExamplePlugin), "1.0.0", channel)
+        public ExamplePlugin(string channel) : base(channel)
         {
             StartTimers();
             Run();
         }
 
-        public ExamplePlugin(params string[] channels) : base(nameof(ExamplePlugin), "1.0.0", channels)
+        public ExamplePlugin(params string[] channels) : base(channels)
         {
             StartTimers();
             Run();

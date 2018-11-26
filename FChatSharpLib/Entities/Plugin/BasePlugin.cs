@@ -160,6 +160,10 @@ namespace FChatSharpLib.Entities.Plugin
                 }
                 catch (Exception ex)
                 {
+                    if(FChatClient != null && FChatClient.State != null && FChatClient.State.IsBotReady)
+                    {
+                        FChatClient.SendMessageInChannel($"Error: {ex.Message}", channel);
+                    }
                     return false;
                 }
 
