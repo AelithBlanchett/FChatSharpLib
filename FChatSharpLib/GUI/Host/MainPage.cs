@@ -8,7 +8,7 @@ namespace FChatSharpLib.GUI.Host
 {
     class MainPage : MenuPage
     {
-        public MainPage(BotHoster program)
+        public MainPage(FChatSharpHost program)
             : base("FChatSharpLib - Host - Main Menu", program,
                   new Option("Join a channel", () => program.NavigateTo<JoinChannelPage>()),
                   new Option("Leave a channel", () => program.NavigateTo<LeaveChannelPage>()),

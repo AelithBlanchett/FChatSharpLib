@@ -6,7 +6,7 @@ namespace FChatSharpLib.Entities.Plugin
 {
     public class DummyPlugin : BasePlugin
     {
-        public DummyPlugin() : base("", "", "")
+        private DummyPlugin() : base("")
         {
 
         }

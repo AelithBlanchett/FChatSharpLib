@@ -9,7 +9,7 @@ namespace FChatSharpLib.GUI.Host
 {
     class LeaveChannelPage : Page
     {
-        public LeaveChannelPage(BotHoster program)
+        public LeaveChannelPage(FChatSharpHost program)
             : base("Leave a channel", program)
         {
             
@@ -19,7 +19,7 @@ namespace FChatSharpLib.GUI.Host
         {
             base.Display();
 
-            BotHoster program = (BotHoster)Program;
+            FChatSharpHost program = (FChatSharpHost)Program;
 
             var channels = program.Bot.State.Channels.ToList();
 

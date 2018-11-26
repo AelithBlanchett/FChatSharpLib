@@ -22,6 +22,7 @@ namespace FChatSharpLib.Entities.Plugin
         public string Name { get; set; }
         public string Version { get; set;  }
         public Guid PluginId { get; set; }
+        public bool IsInDebug { get; set; }
         public bool SingleChannelPlugin
         {
             get
@@ -37,39 +38,59 @@ namespace FChatSharpLib.Entities.Plugin
             }
         }
 
-        private void InitializePlugin(string pluginName, string pluginVersion)
+        private void InitializePlugin()
         {
-            Name = pluginName;
-            Version = pluginVersion;
+            Name = this.GetType().Name;
+            Version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+
             AddPage(new MainPage(this, Name, Version));
             AddPage(new JoinChannelPage(this));
             AddPage(new LeaveChannelPage(this));
             AddPage(new StopListeningChannelPage(this));
             SetPage<MainPage>();
+            
             OnPluginLoad();
         }
 
-        public BasePlugin(string pluginName, string pluginVersion, string channel) : base($"{pluginName} ({pluginVersion})", breadcrumbHeader: true)
+        private const string DebugChannel = "ADH-DEBUG";
+
+        private BasePlugin(string firstChannel, IEnumerable<string> allChannels, bool debug = false) : base($"Console host", breadcrumbHeader: true)
         {
-            InitializePlugin(pluginName, pluginVersion);
-            Channel = channel;
-            Channels = new List<string>() { channel };
-            if (!FChatClient.State.Channels.Any(x => x.ToLower() == channel.ToLower()))
+            IsInDebug = debug;
+            if (!IsInDebug && firstChannel == DebugChannel)
             {
-                FChatClient.JoinChannel(channel);
+                throw new Exception("If you don't want to use the debug mode, use another constructor.");
             }
+
+            InitializePlugin();
+            if (!IsInDebug)
+            {
+                var missingJoinedChannels = Channels.Select(x => x.ToLower()).Except(FChatClient.State.Channels.Select(x => x.ToLower()));
+                foreach (var missingChannel in missingJoinedChannels)
+                {
+                    FChatClient.JoinChannel(missingChannel);
+                }
+            }
+            //get the type of the class
+            FieldInfo finfo = this.GetType().BaseType.BaseType.GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).First();
+            finfo.SetValue(this, $"{Name} ({Version})");
+            Run();
+
         }
 
-        public BasePlugin(string pluginName, string pluginVersion, IEnumerable<string> channels) : base($"{pluginName} ({pluginVersion})", breadcrumbHeader: true)
+        /// <summary>
+        /// Should only be used for debug purposes.
+        /// </summary>
+        public BasePlugin(bool debug) : this(DebugChannel, new List<string>() { DebugChannel }, debug)
         {
-            InitializePlugin(pluginName, pluginVersion);
-            Channel = channels.First();
-            Channels = channels.ToList();
-            var missingJoinedChannels = channels.Select(x => x.ToLower()).Except(FChatClient.State.Channels.Select(x => x.ToLower()));
-            foreach (var missingChannel in missingJoinedChannels)
-            {
-                FChatClient.JoinChannel(missingChannel);
-            }
+        }
+
+        public BasePlugin(string channel, bool debug = false) : this(channel, new List<string>() { channel }, debug)
+        {
+        }
+
+        public BasePlugin(IEnumerable<string> channels, bool debug = false) : this(channels.First(), channels, debug)
+        {
         }
 
         private void ReceivedCommand(object model, BasicDeliverEventArgs ea)
@@ -152,14 +173,25 @@ namespace FChatSharpLib.Entities.Plugin
             PluginId = System.Guid.NewGuid();
             FChatClient = new RemoteBotController();
 
-            FChatClient.Connect();
-
-            FChatClient.Events.ReceivedChatCommand += Events_ReceivedChatCommand;
-
-            while (FChatClient.State == null || !FChatClient.State.IsBotReady)
+            if (!IsInDebug)
             {
-                Task.Delay(1000).ConfigureAwait(false);
+                FChatClient.Connect();
+
+                FChatClient.Events.ReceivedChatCommand += Events_ReceivedChatCommand;
+
+                while (FChatClient.State == null || !FChatClient.State.IsBotReady)
+                {
+                    Console.WriteLine("Awaiting connection to the Host... Make sure you've started at least one instance of FChatSharpHost (or Bot, if you know what you're doing).");
+                    Task.Delay(1000).ConfigureAwait(false);
+                }
+
+                Console.WriteLine("Connected!");
             }
+            else
+            {
+                Console.WriteLine($"Debug mode activated. 'Joining' the default debug channel {DebugChannel}");
+            }
+
         }
 
         private void Events_ReceivedChatCommand(object sender, ReceivedPluginCommandEventArgs e)

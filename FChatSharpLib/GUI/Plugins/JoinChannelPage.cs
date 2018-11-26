@@ -22,9 +22,12 @@ namespace FChatSharpLib.GUI.Plugins
             Output.WriteLine($"Joining channel {input}...");
 
             input = input.Trim().ToLower();
-            BasePlugin program = (BasePlugin)Program;
-            program.AddHandledChannel(input);
-            program.FChatClient.JoinChannel(input);
+            if (!string.IsNullOrWhiteSpace(input)){
+                BasePlugin program = (BasePlugin)Program;
+                program.AddHandledChannel(input);
+                program.FChatClient.JoinChannel(input);
+            }
+            
             
 
             Input.ReadString("Press [Enter] to navigate home");

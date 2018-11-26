@@ -8,7 +8,7 @@ namespace FChatSharp
     {
         static void Main(string[] args)
         {
-            var bot = new BotHoster("username", "password", "BotCharacterName", "ASuperDeveloper", true, 4000);
+            var bot = new FChatSharpHost("username", "password", "BotCharacterName", "ASuperDeveloper", true, 4000);
         }
     }
 }

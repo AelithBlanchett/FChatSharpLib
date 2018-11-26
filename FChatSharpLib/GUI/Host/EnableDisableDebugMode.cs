@@ -9,7 +9,7 @@ namespace FChatSharpLib.GUI.Host
 {
     class EnableDisableDebugMode : Page
     {
-        public EnableDisableDebugMode(BotHoster program)
+        public EnableDisableDebugMode(FChatSharpHost program)
             : base("Enable/Disable debug mode", program)
         {
 
@@ -19,7 +19,7 @@ namespace FChatSharpLib.GUI.Host
         {
             base.Display();
 
-            BotHoster program = (BotHoster)Program;
+            FChatSharpHost program = (FChatSharpHost)Program;
 
             var input = Input.ReadInt("Press 1 to Enable debug mode or 2 if you want to disable it:", 1, 2);
             program.Bot.Events.Debug = (input == 1);

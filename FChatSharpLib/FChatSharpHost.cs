@@ -7,11 +7,11 @@ using System.Text;
 
 namespace FChatSharpLib
 {
-    public class BotHoster : Program
+    public class FChatSharpHost : Program
     {
         public Bot Bot;
 
-        public BotHoster(string username, string password, string botCharacterName, string administratorCharacterName, bool debug, int delayBetweenEachReconnection) : base("FChatSharpLib - Host", breadcrumbHeader: true)
+        public FChatSharpHost(string username, string password, string botCharacterName, string administratorCharacterName, bool debug, int delayBetweenEachReconnection) : base("FChatSharp - Host", breadcrumbHeader: true)
         {
             AddPage(new MainPage(this));
             AddPage(new JoinChannelPage(this));
