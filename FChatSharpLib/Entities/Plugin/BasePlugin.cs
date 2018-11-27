@@ -74,8 +74,6 @@ namespace FChatSharpLib.Entities.Plugin
             //get the type of the class
             FieldInfo finfo = this.GetType().BaseType.BaseType.GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).First();
             finfo.SetValue(this, $"{Name} ({Version})");
-            Run();
-
         }
 
         /// <summary>
