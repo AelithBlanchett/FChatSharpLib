@@ -65,7 +65,7 @@ namespace FChatSharpLib
                     break;
                 case nameof(FChatSharpLib.Entities.Events.Server.ConnectedUsers):
                     var conEvent = (FChatSharpLib.Entities.Events.Server.ConnectedUsers)e.Event;
-                    BotConnected?.Invoke(this, new EventArgs());
+                    BotConnected?.Invoke(this, new Entities.EventHandlers.ReceivedStateUpdateEventArgs() { State = State });
                     break;
                 case nameof(FChatSharpLib.Entities.Events.Server.StatusChanged):
                     var staEvent = (FChatSharpLib.Entities.Events.Server.StatusChanged)e.Event;
@@ -111,7 +111,7 @@ namespace FChatSharpLib
         public event EventHandler<Entities.Events.Server.AddedChanOP> AddedOPInChannel;
         public event EventHandler<Entities.Events.Server.RemovedChanOP> RemovedOPInChannel;
         public event EventHandler<Entities.Events.Server.InitialChannelData> BotCreatedChannel;
-        public event EventHandler<EventArgs> BotConnected;
+        public event EventHandler<Entities.EventHandlers.ReceivedStateUpdateEventArgs> BotConnected;
         public event EventHandler<Entities.Events.Server.RollResult> RollResultReceived;
 
 

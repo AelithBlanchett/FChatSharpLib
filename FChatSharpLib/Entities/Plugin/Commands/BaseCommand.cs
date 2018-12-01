@@ -15,6 +15,6 @@ namespace FChatSharpLib.Entities.Plugin.Commands
             }
         }
         public TPlugin Plugin { get; set; }
-        public abstract void ExecuteCommand(string characterCalling, string[] args, string channel);
+        public abstract void ExecuteCommand(string characterCalling, IEnumerable<string> args, string channel);
     }
 }

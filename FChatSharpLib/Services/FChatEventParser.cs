@@ -54,22 +54,19 @@ namespace FChatSharpLib.Entities.Events
                     if (!string.IsNullOrWhiteSpace(messageText) && messageText.StartsWith("!") && messageText.Remove(0, 1).Length > 1)
                     {
                         var splittedMessage = messageText.Split(new char[] { ' ' }, 2);
-                        var arguments = new string[splittedMessage.Length - 1];
-
-                        if (splittedMessage.Length > 2)
+                        var arguments = new List<string>();
+                        if(splittedMessage.Count() > 1)
                         {
-                            for (int i = 1; i < splittedMessage.Length; i++)
-                            {
-                                arguments[i - 1] = splittedMessage[i];
-                            }
+                            arguments.AddRange(splittedMessage[1].Replace(" ", ",").Split(','));
                         }
+                        
 
                         var command = splittedMessage[0];
 
                         ReceivedChatCommandHandler?.Invoke(null, new ReceivedPluginCommandEventArgs()
                         {
                             Command = command.Remove(0, 1),
-                            Arguments = arguments,
+                            Arguments = arguments.ToArray(),
                             Channel = channel,
                             Character = character
                         });

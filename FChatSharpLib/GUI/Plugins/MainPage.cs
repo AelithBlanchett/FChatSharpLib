@@ -12,6 +12,7 @@ namespace FChatSharpLib.GUI.Plugins
             : base($"{pluginName} ({pluginVersion}) - Main Menu", program,
                   new Option("Join a channel", () => program.NavigateTo<JoinChannelPage>()),
                   new Option("Leave a channel", () => program.NavigateTo<LeaveChannelPage>()),
+                  new Option("Execute a command", () => program.NavigateTo<ExecuteCommandPage>()),
                   new Option("Stop listening to commands in a channel", () => program.NavigateTo<StopListeningChannelPage>()))
         {
         }

@@ -52,15 +52,18 @@ namespace FChatSharpLib
             Events = new Events(_username, _password, State.BotCharacterName, _debug, _delayBetweenEachReconnection);
             Events.ReceivedPluginRawData += Events_ReceivedPluginRawData;
             base.Connect();
-            _stateUpdateMonitor = new Timer(AutoUpdateState, null, 1000, 5000);
+            _stateUpdateMonitor = new Timer(AutoUpdateState, null, 0, 500);
         }
 
         private void AutoUpdateState(object state)
         {
-            DefaultFChatEventHandler.ReceivedStateUpdate?.Invoke(this, new Entities.EventHandlers.ReceivedStateUpdateEventArgs()
+            if (State.IsBotReady)
             {
-                State = State
-            });
+                DefaultFChatEventHandler.ReceivedStateUpdate?.Invoke(this, new Entities.EventHandlers.ReceivedStateUpdateEventArgs()
+                {
+                    State = State,
+                });
+            }
         }
 
         private void Events_ReceivedPluginRawData(object sender, Entities.EventHandlers.ReceivedPluginRawDataEventArgs e)
@@ -133,6 +136,10 @@ namespace FChatSharpLib
                 case nameof(FChatSharpLib.Entities.Events.Server.LeaveChannel):
                     var lchEvent = (FChatSharpLib.Entities.Events.Server.LeaveChannel)e.Event;
                     State.ChannelsInfo.GetValueOrDefault(lchEvent.channel.ToLower())?.CharactersInfo.RemoveAll(y => y.Character.ToLower() == lchEvent.character.ToLower());
+                    if (this.IsSelf(lchEvent.character))
+                    {
+                        State.ChannelsInfo.TryRemove(lchEvent.channel.ToLower(), out var x);
+                    }
                     break;
                 case nameof(FChatSharpLib.Entities.Events.Server.ChannelOperators):
                     var colEvent = (FChatSharpLib.Entities.Events.Server.ChannelOperators)e.Event;

@@ -55,11 +55,15 @@ namespace FChatSharpLib.Entities.EventHandlers.FChatEvents
 
         public static void SendJsonCommand(string commandJson)
         {
-            var body = Encoding.UTF8.GetBytes(commandJson);
-            _pubsubChannel.BasicPublish(exchange: "",
-                                 routingKey: "FChatSharpLib.Plugins.FromPlugins",
-                                 basicProperties: null,
-                                 body: body);
+            if(_pubsubChannel != null)
+            {
+                var body = Encoding.UTF8.GetBytes(commandJson);
+                _pubsubChannel.BasicPublish(exchange: "",
+                                     routingKey: "FChatSharpLib.Plugins.FromPlugins",
+                                     basicProperties: null,
+                                     body: body);
+            }
+            
         }
 
         public static void Disconnect()

@@ -46,10 +46,9 @@ namespace FChatSharpLib.Entities.Plugin
             AddPage(new MainPage(this, Name, Version));
             AddPage(new JoinChannelPage(this));
             AddPage(new LeaveChannelPage(this));
+            AddPage(new ExecuteCommandPage(this));
             AddPage(new StopListeningChannelPage(this));
             SetPage<MainPage>();
-            
-            OnPluginLoad();
         }
 
         private const string DebugChannel = "ADH-DEBUG";
@@ -62,15 +61,13 @@ namespace FChatSharpLib.Entities.Plugin
                 throw new Exception("If you don't want to use the debug mode, use another constructor.");
             }
 
+            Channel = firstChannel;
+            Channels = allChannels.ToList();
+
             InitializePlugin();
-            if (!IsInDebug)
-            {
-                var missingJoinedChannels = Channels.Select(x => x.ToLower()).Except(FChatClient.State.Channels.Select(x => x.ToLower()));
-                foreach (var missingChannel in missingJoinedChannels)
-                {
-                    FChatClient.JoinChannel(missingChannel);
-                }
-            }
+            OnPluginLoad();
+            Console.WriteLine("Loaded commands: " + string.Join(", ", GetCommandList()));
+
             //get the type of the class
             FieldInfo finfo = this.GetType().BaseType.BaseType.GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).First();
             finfo.SetValue(this, $"{Name} ({Version})");
@@ -129,7 +126,7 @@ namespace FChatSharpLib.Entities.Plugin
         public virtual List<string> GetCommandList()
         {
             var type = typeof(BaseCommand<>);
-            var types = AppDomain.CurrentDomain.GetAssemblies().SelectMany(s => s.GetTypes()).Where(p => IsAssignableToGenericType(p, typeof(BaseCommand<>)));
+            var types = AppDomain.CurrentDomain.GetAssemblies().SelectMany(s => s.GetTypes()).Where(p => p.IsClass && !p.IsAbstract && p.IsPublic && IsAssignableToGenericType(p, typeof(BaseCommand<>)));
             var listOfTypes = types.Select(x => x.Name).Where(x => x != "BaseCommand`1").Distinct();
             return listOfTypes.ToList();
         }
@@ -139,7 +136,7 @@ namespace FChatSharpLib.Entities.Plugin
             return GetCommandList().Exists(x => x.ToLower() == command.ToLower());
         }
 
-        public bool ExecuteCommand(string characterCalling, string command, string[] args, string channel)
+        public bool ExecuteCommand(string characterCalling, string command, IEnumerable<string> args, string channel)
         {
             if (DoesCommandExist(command))
             {
@@ -160,7 +157,14 @@ namespace FChatSharpLib.Entities.Plugin
                 {
                     if(FChatClient != null && FChatClient.State != null && FChatClient.State.IsBotReady)
                     {
-                        FChatClient.SendMessageInChannel($"Error: {ex.Message}", channel);
+                        if(ex.InnerException != null)
+                        {
+                            FChatClient.SendMessageInChannel($"Error: {ex.InnerException.Message}", channel);
+                        }
+                        else
+                        {
+                            FChatClient.SendMessageInChannel($"Error: {ex.Message}", channel);
+                        }
                     }
                     return false;
                 }
@@ -180,20 +184,46 @@ namespace FChatSharpLib.Entities.Plugin
                 FChatClient.Connect();
 
                 FChatClient.Events.ReceivedChatCommand += Events_ReceivedChatCommand;
+                FChatClient.BotConnected += FChatClient_BotConnected;
+                FChatClient.Events.ReceivedStateUpdate += Events_ReceivedStateUpdate;
 
-                while (FChatClient.State == null || !FChatClient.State.IsBotReady)
-                {
-                    Console.WriteLine("Awaiting connection to the Host... Make sure you've started at least one instance of FChatSharpHost (or Bot, if you know what you're doing).");
-                    Task.Delay(1000).ConfigureAwait(false);
-                }
-
-                Console.WriteLine("Connected!");
+                Console.WriteLine("Awaiting connection to the Host... Make sure you've started at least one instance of FChatSharpHost (or Bot, if you know what you're doing).");
             }
             else
             {
                 Console.WriteLine($"Debug mode activated. 'Joining' the default debug channel {DebugChannel}");
             }
 
+        }
+
+        public DateTime LastTimeJoinMissingChannelsCalled = DateTime.MinValue;
+
+        private void Events_ReceivedStateUpdate(object sender, ReceivedStateUpdateEventArgs e)
+        {
+            if((DateTime.Now - LastTimeJoinMissingChannelsCalled).TotalMilliseconds > 1000)
+            {
+                LastTimeJoinMissingChannelsCalled = DateTime.Now;
+                JoinMissingChannels();
+            }            
+        }
+
+        private void FChatClient_BotConnected(object sender, EventArgs e)
+        {
+            Console.WriteLine("Connected!");
+            JoinMissingChannels();
+        }
+
+        private void JoinMissingChannels()
+        {
+            if (!IsInDebug)
+            {
+                var missingJoinedChannels = Channels.Select(x => x.ToLower()).Except(FChatClient.State.Channels.Select(x => x.ToLower()));
+                foreach (var missingChannel in missingJoinedChannels)
+                {
+                    Console.WriteLine($"Joining channel {missingChannel}");
+                    FChatClient.JoinChannel(missingChannel);
+                }
+            }
         }
 
         private void Events_ReceivedChatCommand(object sender, ReceivedPluginCommandEventArgs e)
