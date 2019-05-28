@@ -133,7 +133,7 @@ namespace FChatSharpLib
                 port = 8722;
             }
 
-            WsClient = new WebSocket($"ws://chat.f-list.net:{port}");
+            WsClient = new WebSocket($"wss://chat.f-list.net/chat2:{port}");
 
             WSEventHandlers = new DefaultWebSocketEventHandler(WsClient, identificationInfo, DelayBetweenEachReconnection, Debug);
 

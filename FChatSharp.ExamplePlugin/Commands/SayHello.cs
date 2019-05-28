@@ -11,7 +11,7 @@ namespace FChatSharp.ExamplePlugin.Commands
     {
         public override string Description => "Says hello to the room.";
 
-        public override void ExecuteCommand(string character, string[] args, string channel)
+        public override void ExecuteCommand(string character, IEnumerable<string> args, string channel)
         {
             Plugin.FChatClient.SendMessageInChannel("Hello everyone! Bye!", channel);
             var channelInformations = Plugin.FChatClient.State.ChannelsInfo.GetValueOrDefault(channel);
