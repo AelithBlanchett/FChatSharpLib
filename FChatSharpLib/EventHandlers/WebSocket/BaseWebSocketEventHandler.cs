@@ -26,9 +26,13 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
 
         public bool Debug { get; set; }
 
-        public BaseWebSocketEventHandler(WebSocketSharp.WebSocket wsClient)
+        public BaseWebSocketEventHandler()
         {
-            _webSocketClient = wsClient;
+        }
+
+        public void InitializeWsClient(string url)
+        {
+            _webSocketClient = new WebSocketSharp.WebSocket(url);
             _webSocketClient.OnOpen += this.OnOpen;
             _webSocketClient.OnClose += this.OnClose;
             _webSocketClient.OnError += this.OnError;
@@ -43,6 +47,8 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
 
         public abstract void OnMessage(object sender, MessageEventArgs e);
 
-        
+        public abstract void Close();
+
+        public abstract void Connect();
     }
 }

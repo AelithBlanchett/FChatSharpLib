@@ -17,7 +17,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using WebSocketSharp;
 
-
 namespace FChatSharpLib
 {
     public class Events : IEvents
@@ -33,6 +32,7 @@ namespace FChatSharpLib
 
         public IWebSocketEventHandler WSEventHandlers { get; set; }
         public WebSocket WsClient { get; set; }
+
         public bool Debug {
             get
             {
@@ -114,40 +114,20 @@ namespace FChatSharpLib
             _pubsubChannel.BasicConsume(queue: "FChatSharpLib.Plugins.FromPlugins",
                                  autoAck: true,
                                  consumer: consumer);
-            //Token to authenticate on F-list
-            var ticket = FListClient.GetTicket(username, password);
 
-            var identificationInfo = new Identification()
-            {
-                account = username,
-                botVersion = "1.0.0",
-                character = botCharacterName,
-                ticket = ticket,
-                method = "ticket",
-                botCreator = username
-            };
+            WSEventHandlers = new DefaultWebSocketEventHandler(username, password, botCharacterName, DelayBetweenEachReconnection, Debug);
 
-            int port = 9722;
-            if (Debug == true)
-            {
-                port = 8722;
-            }
-
-            WsClient = new WebSocket($"wss://chat.f-list.net/chat2:{port}");
-
-            WSEventHandlers = new DefaultWebSocketEventHandler(WsClient, identificationInfo, DelayBetweenEachReconnection, Debug);
-
-            WsClient.Connect();
+            WSEventHandlers.Connect();
         }
 
         public void StopListening()
         {
-            WsClient.Close(CloseStatusCode.Normal);
+            WSEventHandlers.Close();
         }
 
         public void SendCommand(string commandJson)
         {
-            if (WsClient == null) { return; }
+            if (WSEventHandlers == null || WSEventHandlers.WebSocketClient == null) { return; }
             commandsInQueue++;
             var currentTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
@@ -162,7 +142,7 @@ namespace FChatSharpLib
 
             lastTimeCommandReceived = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             commandsInQueue--;
-            WsClient.Send(commandJson);
+            WSEventHandlers.WebSocketClient.Send(commandJson);
             if (Debug)
             {
                 Console.WriteLine("SENT: " + commandJson);

@@ -11,5 +11,8 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
         void OnClose(object sender, CloseEventArgs e);
         void OnError(object sender, ErrorEventArgs e);
         void OnMessage(object sender, MessageEventArgs e);
+
+        void Close();
+        void Connect();
     }
 }
