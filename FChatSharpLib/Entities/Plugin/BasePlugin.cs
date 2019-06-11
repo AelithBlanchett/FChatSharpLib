@@ -200,24 +200,28 @@ namespace FChatSharpLib.Entities.Plugin
 
         private void Events_ReceivedStateUpdate(object sender, ReceivedStateUpdateEventArgs e)
         {
-            if((DateTime.Now - LastTimeJoinMissingChannelsCalled).TotalMilliseconds > 1000)
+            if((DateTime.Now - LastTimeJoinMissingChannelsCalled).TotalMilliseconds > 5000)
             {
                 LastTimeJoinMissingChannelsCalled = DateTime.Now;
-                JoinMissingChannels();
+                JoinRequiredChannels();
             }            
         }
 
         private void FChatClient_BotConnected(object sender, EventArgs e)
         {
             Console.WriteLine("Connected!");
-            JoinMissingChannels();
+            JoinRequiredChannels(false);
         }
 
-        private void JoinMissingChannels()
+        private void JoinRequiredChannels(bool excludeAlreadyJoinedOnes = true)
         {
             if (!IsInDebug)
             {
-                var missingJoinedChannels = Channels.Select(x => x.ToLower()).Except(FChatClient.State.Channels.Select(x => x.ToLower()));
+                var missingJoinedChannels = Channels.Select(x => x.ToLower());
+                if (excludeAlreadyJoinedOnes)
+                {
+                    missingJoinedChannels = missingJoinedChannels.Except(FChatClient.State.Channels.Select(x => x.ToLower()));
+                }
                 foreach (var missingChannel in missingJoinedChannels)
                 {
                     Console.WriteLine($"Joining channel {missingChannel}");
