@@ -1,17 +1,19 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Builder;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
-using WebSocketSharp;
+using Websocket.Client;
 
 namespace FChatSharpLib.Entities.EventHandlers.WebSocket
 {
     public abstract class BaseWebSocketEventHandler : IWebSocketEventHandler
     {
-        private WebSocketSharp.WebSocket _webSocketClient;
+        private WebsocketClient _webSocketClient;
 
-        public WebSocketSharp.WebSocket WebSocketClient
+        public WebsocketClient WebSocketClient
         {
             get
             {
@@ -32,21 +34,18 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
 
         public void InitializeWsClient(string url)
         {
-            _webSocketClient = new WebSocketSharp.WebSocket(url);
-            _webSocketClient.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
-            _webSocketClient.OnOpen += this.OnOpen;
-            _webSocketClient.OnClose += this.OnClose;
-            _webSocketClient.OnError += this.OnError;
-            _webSocketClient.OnMessage += this.OnMessage;
+            _webSocketClient = new WebsocketClient(new Uri(url));
+            _webSocketClient.DisconnectionHappened.Subscribe(type => this.OnClose(this, type));
+            _webSocketClient.MessageReceived.Subscribe(type => this.OnMessage(this, type));
         }
 
         public abstract void OnOpen(object sender, EventArgs e);
 
-        public abstract void OnClose(object sender, CloseEventArgs e);
+        public abstract void OnClose(object sender, DisconnectionType e);
 
-        public abstract void OnError(object sender, ErrorEventArgs e);
+        public abstract void OnError(object sender, DisconnectionType e);
 
-        public abstract void OnMessage(object sender, MessageEventArgs e);
+        public abstract void OnMessage(object sender, ResponseMessage e);
 
         public abstract void Close();
 

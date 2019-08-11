@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using WebSocketSharp;
 using System.Net;
 using Newtonsoft.Json;
 using FChatSharpLib.Entities;

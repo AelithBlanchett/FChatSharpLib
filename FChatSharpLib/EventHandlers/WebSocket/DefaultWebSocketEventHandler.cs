@@ -7,7 +7,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WebSocketSharp;
+using Websocket.Client;
+
 
 namespace FChatSharpLib.Entities.EventHandlers.WebSocket
 {
@@ -39,29 +40,29 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
             _botCharacterName = botCharacterName;
         }
 
-        public override void OnClose(object sender, CloseEventArgs e)
+        public override void OnClose(object sender, DisconnectionType e)
         {
-            Console.WriteLine($"Closed connection. Code:  {e.Code} Reason: {e.Reason}. Retyring again in 4000ms.");
+            Console.WriteLine($"Closed connection. Code:  {e.ToString()}. Retyring again in 4000ms.");
             System.Threading.Thread.Sleep(DelayBetweenEachReconnection);
             InitializeWsClient(_url);
-            WebSocketClient.Connect();
+            this.Connect();
         }
 
-        public override void OnError(object sender, ErrorEventArgs e)
+        public override void OnError(object sender, DisconnectionType e)
         {
-            Console.WriteLine("WebSocket connection closed. Retyring again in 4000ms.");
-            System.Threading.Thread.Sleep(DelayBetweenEachReconnection);
-            InitializeWsClient(_url);
-            WebSocketClient.Connect();
+            //Console.WriteLine("WebSocket connection closed. Retyring again in 4000ms.");
+            //System.Threading.Thread.Sleep(DelayBetweenEachReconnection);
+            //InitializeWsClient(_url);
+            //WebSocketClient.Connect();
         }
 
-        public override void OnMessage(object sender, MessageEventArgs e)
+        public override void OnMessage(object sender, ResponseMessage e)
         {
             if (Debug)
             {
-                Console.WriteLine(e.Data);
+                Console.WriteLine(e.Text);
             }
-            FChatEventParser.HandleSpecialEvents(e.Data, DefaultFChatEventHandler.ReceivedFChatEvent, DefaultFChatEventHandler.ReceivedChatCommand);
+            FChatEventParser.HandleSpecialEvents(e.Text, DefaultFChatEventHandler.ReceivedFChatEvent, DefaultFChatEventHandler.ReceivedChatCommand);
         }
 
         public override void OnOpen(object sender, EventArgs e)
@@ -84,13 +85,14 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
 
         public override void Close()
         {
-            WebSocketClient.Close(CloseStatusCode.Normal);
+            WebSocketClient.Stop(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "Closed normally.");
         }
 
         public override void Connect()
         {
             InitializeWsClient(_url);
-            WebSocketClient.Connect();
+            OnOpen(this, null);
+            WebSocketClient.Start().Wait();
         }
     }
 }

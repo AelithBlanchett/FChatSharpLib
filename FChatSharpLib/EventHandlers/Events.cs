@@ -15,7 +15,6 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using WebSocketSharp;
 
 namespace FChatSharpLib
 {
@@ -31,7 +30,6 @@ namespace FChatSharpLib
         private IModel _pubsubChannel;
 
         public IWebSocketEventHandler WSEventHandlers { get; set; }
-        public WebSocket WsClient { get; set; }
 
         public bool Debug {
             get
