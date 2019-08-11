@@ -33,6 +33,7 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
         public void InitializeWsClient(string url)
         {
             _webSocketClient = new WebSocketSharp.WebSocket(url);
+            _webSocketClient.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
             _webSocketClient.OnOpen += this.OnOpen;
             _webSocketClient.OnClose += this.OnClose;
             _webSocketClient.OnError += this.OnError;
