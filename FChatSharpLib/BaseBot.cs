@@ -185,7 +185,7 @@ namespace FChatSharpLib
 
         public void InviteUserToChannel(string character, string channel)
         {
-            SendCommandToServer(new KickFromChannel()
+            SendCommandToServer(new InviteUserToCreatedChannel()
             {
                 character = character,
                 channel = channel
