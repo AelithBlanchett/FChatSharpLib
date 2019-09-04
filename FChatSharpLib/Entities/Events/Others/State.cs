@@ -73,9 +73,11 @@ namespace FChatSharpLib.Entities.Events.Helpers
             }
         }
 
+        private readonly object balanceLock = new object();
+
         public string Serialize()
         {
-            lock (this)
+            lock (balanceLock)
             {
                 return JsonConvert.SerializeObject(this);
             }
