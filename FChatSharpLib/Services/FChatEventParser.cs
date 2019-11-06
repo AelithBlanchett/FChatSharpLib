@@ -150,7 +150,11 @@ namespace FChatSharpLib.Entities.Events
         public static T GetEnumEquivalent<T>(string gender) where T : Enum
         {
             var availableValues = Enum.GetNames(typeof(T));
-            var realName = availableValues.First(x => x.ToLower().Replace("_", "-") == gender.ToLower().Replace("_", "-"));
+            var realName = availableValues.FirstOrDefault(x => x.ToLower().Replace("_", "-") == gender.ToLower().Replace("_", "-"));
+            if(realName == null)
+            {
+                realName = availableValues.First();
+            }
             return (T)Enum.Parse(typeof(T), realName);
         }
 

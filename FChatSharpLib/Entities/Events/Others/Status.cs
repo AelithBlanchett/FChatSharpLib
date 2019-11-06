@@ -7,6 +7,7 @@
         Busy = 2,
         Away = 3,
         DND = 4,
-        Idle = 5
+        Idle = 5,
+        Crown = 6
     }
 }
