@@ -3,18 +3,27 @@
 Requirements:
 
 -Requires RabbitMQ Server to be installed and running on the host machine.
--RabbitMQ requires a 64-bit supported version of Erlang for Windows to be installed. 
+
+-RabbitMQ requires a 64-bit supported version of Erlang for Windows to be installed.
+
 -NetcoreApp 2.1 - does not work on versions of Visual Studio earlier than 2017
+
 -See F-Chat protocol for rules regarding using a Bot in F-Chat here https://wiki.f-list.net/F-Chat_Protocol#Bots
 
 Functions:
 
--Connect to the F-Chat server  
+-Connect to the F-Chat server
+
 -Join and leave channels
+
 -Send chat messages to users or channels
+
 -Update bot status
+
 -Ban and unban users
+
 -Listen for messages and user status updates
+
 
 Connect with:
 var bot = new FChatSharpHost("FChat_account_username", "FChat_account_password", "FChat_character_name", "administrator_character_name", true, 4000);
