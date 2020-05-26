@@ -16,5 +16,10 @@ namespace FChatSharpLib.Entities.Plugin.Commands
         }
         public TPlugin Plugin { get; set; }
         public abstract void ExecuteCommand(string characterCalling, IEnumerable<string> args, string channel);
+
+        public void ExecutePrivateCommand(string characterCalling, IEnumerable<string> args)
+        {
+            Plugin.FChatClient.SendPrivateMessage("You cannot use that command in private.", characterCalling);
+        }
     }
 }

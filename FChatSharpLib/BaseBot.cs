@@ -165,6 +165,15 @@ namespace FChatSharpLib
             }.ToString());
         }
 
+        public void SendAdInChannel(string message, string channel)
+        {
+            SendCommandToServer(new AdMessage()
+            {
+                message = message,
+                channel = channel
+            }.ToString());
+        }
+
         public void SendPrivateMessage(string message, string character)
         {
             SendCommandToServer(new PrivateMessage()
@@ -177,6 +186,15 @@ namespace FChatSharpLib
         public void KickUser(string character, string channel)
         {
             SendCommandToServer(new KickFromChannel()
+            {
+                character = character,
+                channel = channel
+            }.ToString());
+        }
+
+        public void ModUser(string character, string channel)
+        {
+            SendCommandToServer(new AddChanOP()
             {
                 character = character,
                 channel = channel
@@ -242,6 +260,15 @@ namespace FChatSharpLib
             {
                 channel = channel,
                 dice = "bottle"
+            }.ToString());
+        }
+
+        public void ChangeTypingStatusForPrivMessage(bool isTyping, string character)
+        {
+            SendCommandToServer(new TypingStatus()
+            {
+                status = (isTyping ? "typing" : "clear"),
+                character = character
             }.ToString());
         }
 

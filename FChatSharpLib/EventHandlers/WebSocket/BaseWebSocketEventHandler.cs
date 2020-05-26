@@ -31,11 +31,17 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
         {
         }
 
-        public void InitializeWsClient(string url)
+        public void InitializeWsClient(string url, int delayBeforeReconnectInMs)
         {
-            _webSocketClient = new WebsocketClient(new Uri(url));
-            _webSocketClient.DisconnectionHappened.Subscribe(type => this.OnClose(this, type));
-            _webSocketClient.MessageReceived.Subscribe(type => this.OnMessage(this, type));
+            if (_webSocketClient == null)
+            {
+                _webSocketClient = new WebsocketClient(new Uri(url));
+
+                _webSocketClient.ReconnectTimeoutMs = delayBeforeReconnectInMs;
+                _webSocketClient.ErrorReconnectTimeoutMs = delayBeforeReconnectInMs;
+                _webSocketClient.DisconnectionHappened.Subscribe(type => this.OnClose(this, type));
+                _webSocketClient.MessageReceived.Subscribe(type => this.OnMessage(this, type));
+            }
         }
 
         public abstract void OnOpen(object sender, EventArgs e);

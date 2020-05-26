@@ -150,7 +150,14 @@ namespace FChatSharpLib.Entities.Plugin
                     {
                         var instance = Activator.CreateInstance(typeToCreate);
                         instance.GetType().InvokeMember(nameof(BaseCommand<DummyPlugin>.Plugin), BindingFlags.Instance | BindingFlags.Public | BindingFlags.SetProperty, Type.DefaultBinder, instance, new object[] { this });
-                        instance.GetType().InvokeMember(nameof(BaseCommand<DummyPlugin>.ExecuteCommand), BindingFlags.Instance | BindingFlags.Public | BindingFlags.InvokeMethod, Type.DefaultBinder, instance, new object[] { characterCalling, args, channel });
+                        if (!string.IsNullOrWhiteSpace(channel))
+                        {
+                            instance.GetType().InvokeMember(nameof(BaseCommand<DummyPlugin>.ExecuteCommand), BindingFlags.Instance | BindingFlags.Public | BindingFlags.InvokeMethod, Type.DefaultBinder, instance, new object[] { characterCalling, args, channel });
+                        }
+                        else
+                        {
+                            instance.GetType().InvokeMember(nameof(BaseCommand<DummyPlugin>.ExecutePrivateCommand), BindingFlags.Instance | BindingFlags.Public | BindingFlags.InvokeMethod, Type.DefaultBinder, instance, new object[] { characterCalling, args });
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -232,7 +239,7 @@ namespace FChatSharpLib.Entities.Plugin
 
         private void Events_ReceivedChatCommand(object sender, ReceivedPluginCommandEventArgs e)
         {
-            if (Channels.Contains(e.Channel, StringComparer.OrdinalIgnoreCase))
+            if (Channels.Contains(e.Channel, StringComparer.OrdinalIgnoreCase) || string.IsNullOrWhiteSpace(e.Channel)) //Null or whitespace=  private command
             {
                 ExecuteCommand(e.Character, e.Command, e.Arguments, e.Channel);
             }

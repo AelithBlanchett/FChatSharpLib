@@ -127,7 +127,10 @@ namespace FChatSharpLib.Entities.Events
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(ex.ToString());
+                        if(splittedData[0] != "VAR")
+                        {
+                            Console.WriteLine(ex.ToString());
+                        }
                     }
 
                 }

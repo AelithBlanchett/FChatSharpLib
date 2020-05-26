@@ -43,17 +43,17 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
         public override void OnClose(object sender, DisconnectionType e)
         {
             Console.WriteLine($"Closed connection. Code:  {e.ToString()}.");
-            //System.Threading.Thread.Sleep(DelayBetweenEachReconnection);
-            //InitializeWsClient(_url);
-            //this.Connect();
+            Console.WriteLine($"Retyring again in {DelayBetweenEachReconnection}ms.");
+            System.Threading.Thread.Sleep(DelayBetweenEachReconnection);
+            this.Connect();
         }
 
         public override void OnError(object sender, DisconnectionType e)
         {
-            //Console.WriteLine("WebSocket connection closed. Retyring again in 4000ms.");
-            //System.Threading.Thread.Sleep(DelayBetweenEachReconnection);
-            //InitializeWsClient(_url);
-            //WebSocketClient.Connect();
+            Console.WriteLine($"Connection closed with error. Code:  {e.ToString()}.");
+            Console.WriteLine($"Retyring again in {DelayBetweenEachReconnection}ms.");
+            System.Threading.Thread.Sleep(DelayBetweenEachReconnection);
+            this.Connect();
         }
 
         public override void OnMessage(object sender, ResponseMessage e)
@@ -90,7 +90,7 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
 
         public override void Connect()
         {
-            InitializeWsClient(_url);
+            InitializeWsClient(_url, DelayBetweenEachReconnection);
             OnOpen(this, null);
             WebSocketClient.Start().Wait();
         }
