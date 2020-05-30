@@ -37,8 +37,8 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
             {
                 _webSocketClient = new WebsocketClient(new Uri(url));
 
-                _webSocketClient.ReconnectTimeoutMs = delayBeforeReconnectInMs;
-                _webSocketClient.ErrorReconnectTimeoutMs = delayBeforeReconnectInMs;
+                _webSocketClient.ReconnectTimeout = TimeSpan.FromMilliseconds(delayBeforeReconnectInMs);
+                _webSocketClient.ErrorReconnectTimeout = TimeSpan.FromMilliseconds(delayBeforeReconnectInMs);
                 _webSocketClient.DisconnectionHappened.Subscribe(type => this.OnClose(this, type));
                 _webSocketClient.MessageReceived.Subscribe(type => this.OnMessage(this, type));
             }
@@ -46,9 +46,9 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
 
         public abstract void OnOpen(object sender, EventArgs e);
 
-        public abstract void OnClose(object sender, DisconnectionType e);
+        public abstract void OnClose(object sender, DisconnectionInfo e);
 
-        public abstract void OnError(object sender, DisconnectionType e);
+        public abstract void OnError(object sender, DisconnectionInfo e);
 
         public abstract void OnMessage(object sender, ResponseMessage e);
 

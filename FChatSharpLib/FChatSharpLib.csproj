@@ -24,8 +24,8 @@
   <ItemGroup>
     <PackageReference Include="EasyConsole" Version="1.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-    <PackageReference Include="RabbitMQ.Client" Version="6.0.0-pre3" />
-    <PackageReference Include="Websocket.Client" Version="3.1.28" />
+    <PackageReference Include="RabbitMQ.Client" Version="6.0.0" />
+    <PackageReference Include="Websocket.Client" Version="4.3.15" />
   </ItemGroup>
 
 </Project>
