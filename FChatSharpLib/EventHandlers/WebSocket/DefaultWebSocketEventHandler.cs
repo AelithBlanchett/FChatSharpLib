@@ -44,7 +44,6 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
         {
             Console.WriteLine($"Closed connection. {e.ToString()}.");
             Console.WriteLine($"Exception:  {e.Exception.ToString()}.");
-            Console.WriteLine($"CloseStatus:  {e.CloseStatus.Value.ToString()}.");
             Console.WriteLine($"Retyring again in {DelayBetweenEachReconnection}ms.");
             System.Threading.Thread.Sleep(DelayBetweenEachReconnection);
             this.Connect();
