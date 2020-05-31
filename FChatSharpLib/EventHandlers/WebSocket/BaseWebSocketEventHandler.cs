@@ -37,18 +37,7 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
 
         public static bool ValidateServerCertificate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
-            // stop communicate with unauthenticated servers.
-            if (certificate == null || chain == null)
-                return false;
-            // stop communicate with unauthenticated servers.
-            if (sslPolicyErrors != SslPolicyErrors.None)
-                return false;
-            // match certificate public key and allow communicate with authenticated servers.
-            String publicekey = certificate.GetPublicKeyString();
-            if (publicekey.Equals(_PUBLICKEY.ToUpper()))
-                return true;
-            // stop communicate with unauthenticated servers.
-            return false;
+            return certificate.GetPublicKeyString().Equals(_PUBLICKEY.ToUpper());
         }
 
         public void InitializeWsClient(string url, int delayBeforeReconnectInMs)
