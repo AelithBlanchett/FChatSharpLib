@@ -149,7 +149,7 @@ namespace FChatSharpLib
 
         private void ForwardReceivedCommandToBot(object model, BasicDeliverEventArgs e)
         {
-            var body = Encoding.UTF8.GetString(e.Body.ToArray());
+            var body = Encoding.UTF8.GetString(e.Body);
             ReceivedPluginRawData?.Invoke(this, new ReceivedPluginRawDataEventArgs()
             {
                 jsonData = body

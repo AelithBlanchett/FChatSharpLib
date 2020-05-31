@@ -91,7 +91,7 @@ namespace FChatSharpLib.Entities.Plugin
         private void ReceivedCommand(object model, BasicDeliverEventArgs ea)
         {
             var body = ea.Body;
-            var unparsedMessage = Encoding.UTF8.GetString(body.ToArray());
+            var unparsedMessage = Encoding.UTF8.GetString(body);
             try
             {
                 var deserializedObject = JsonConvert.DeserializeObject<ReceivedPluginCommandEventArgs>(unparsedMessage);

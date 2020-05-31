@@ -80,7 +80,7 @@ namespace FChatSharpLib.Entities.EventHandlers.FChatEvents
 
         private static void RelayServerEvents(object sender, BasicDeliverEventArgs e)
         {
-            var body = Encoding.UTF8.GetString(e.Body.ToArray());
+            var body = Encoding.UTF8.GetString(e.Body);
             try
             {
                 FChatEventParser.HandleSpecialEvents(body, ReceivedFChatEvent, ReceivedChatCommand);
@@ -94,7 +94,7 @@ namespace FChatSharpLib.Entities.EventHandlers.FChatEvents
         private static void StateUpdate_Received(object model, BasicDeliverEventArgs ea)
         {
             var body = ea.Body;
-            var unparsedMessage = Encoding.UTF8.GetString(body.ToArray());
+            var unparsedMessage = Encoding.UTF8.GetString(body);
             try
             {
                 var deserializedObject = JsonConvert.DeserializeObject<State>(unparsedMessage);
