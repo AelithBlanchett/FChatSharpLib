@@ -46,7 +46,7 @@ namespace FChatSharpLib
             }
         }
         public int DelayBetweenEachReconnection { get; }
-        public double FloodLimit { get; set; } = 2.0;
+        public double FloodLimit { get; set; } = 3.0;
 
         public Events(string username, string password, string botCharacterName, bool debug, int delayBetweenEachReconnection)
         {
