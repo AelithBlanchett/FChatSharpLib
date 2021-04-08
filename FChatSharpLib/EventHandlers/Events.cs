@@ -75,7 +75,7 @@ namespace FChatSharpLib
         public void SetFloodLimit(double floodLimit)
         {
             FloodLimit = floodLimit;
-            if(FloodLimit < 1) { FloodLimit = 1d; }
+            if(FloodLimit < 2) { FloodLimit = 2d; }
             _commandMonitor.Change(0, ActualFloodLimit);
         }
 
