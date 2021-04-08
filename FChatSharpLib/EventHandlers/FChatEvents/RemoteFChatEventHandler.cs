@@ -26,29 +26,29 @@ namespace FChatSharpLib.Entities.EventHandlers.FChatEvents
             var factory = new ConnectionFactory() { HostName = "localhost" };
             var connection = factory.CreateConnection();
             _pubsubChannel = connection.CreateModel();
-            _pubsubChannel.QueueDeclare(queue: "FChatSharpLib.Plugins.FromPlugins",
-                                     durable: false,
-                                     exclusive: false,
-                                     autoDelete: false,
-                                     arguments: null);
-            _pubsubChannel.QueueDeclare(queue: "FChatSharpLib.StateUpdates",
-                                     durable: false,
-                                     exclusive: false,
-                                     autoDelete: false,
-                                     arguments: null);
-            _pubsubChannel.QueueDeclare(queue: "FChatSharpLib.Events",
-                                     durable: false,
-                                     exclusive: false,
-                                     autoDelete: false,
-                                     arguments: null);
+            _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.Plugins.FromPlugins", type: ExchangeType.Fanout);
+            _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.StateUpdates", type: ExchangeType.Fanout);
+            _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.Events", type: ExchangeType.Fanout);
+
+            //State updates consumer
+            var queueNameState = _pubsubChannel.QueueDeclare().QueueName;
+            _pubsubChannel.QueueBind(queue: queueNameState,
+                              exchange: "FChatSharpLib.StateUpdates",
+                              routingKey: "");
             var consumerState = new EventingBasicConsumer(_pubsubChannel);
             consumerState.Received += StateUpdate_Received;
-            _pubsubChannel.BasicConsume(queue: "FChatSharpLib.StateUpdates",
+            _pubsubChannel.BasicConsume(queue: queueNameState,
                                  autoAck: true,
                                  consumer: consumerState);
+
+            //Events consumer
+            var queueNameEvents = _pubsubChannel.QueueDeclare().QueueName;
+            _pubsubChannel.QueueBind(queue: queueNameEvents,
+                              exchange: "FChatSharpLib.Events",
+                              routingKey: "");
             var consumerEvents = new EventingBasicConsumer(_pubsubChannel);
             consumerEvents.Received += RelayServerEvents;
-            _pubsubChannel.BasicConsume(queue: "FChatSharpLib.Events",
+            _pubsubChannel.BasicConsume(queue: queueNameEvents,
                                  autoAck: true,
                                  consumer: consumerEvents);
         }
@@ -58,8 +58,8 @@ namespace FChatSharpLib.Entities.EventHandlers.FChatEvents
             if(_pubsubChannel != null)
             {
                 var body = Encoding.UTF8.GetBytes(commandJson);
-                _pubsubChannel.BasicPublish(exchange: "",
-                                     routingKey: "FChatSharpLib.Plugins.FromPlugins",
+                _pubsubChannel.BasicPublish(exchange: "FChatSharpLib.Plugins.FromPlugins",
+                                     routingKey: "",
                                      basicProperties: null,
                                      body: body);
             }

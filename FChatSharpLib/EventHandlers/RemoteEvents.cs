@@ -13,6 +13,11 @@ namespace FChatSharpLib
         public double FloodLimit { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
         public bool Debug { get; set; }
 
+        public RemoteEvents(bool debug)
+        {
+            Debug = debug;
+        }
+
         public event EventHandler<ReceivedEventEventArgs> ReceivedFChatEvent
         {
             add { RemoteFChatEventHandler.ReceivedFChatEvent += value; }
@@ -50,6 +55,11 @@ namespace FChatSharpLib
                 Console.WriteLine("REMOTE SENT TO HOST: " + commandJson);
             }
             RemoteFChatEventHandler.SendJsonCommand(commandJson);
+        }
+
+        public void SetFloodLimit(double floodLimit)
+        {
+            throw new NotImplementedException();
         }
     }
 }

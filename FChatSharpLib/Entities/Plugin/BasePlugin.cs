@@ -20,7 +20,7 @@ namespace FChatSharpLib.Entities.Plugin
         public string Channel { get; set; }
         public List<string> Channels { get; set; }
         public string Name { get; set; }
-        public string Version { get; set;  }
+        public string Version { get; set; }
         public Guid PluginId { get; set; }
         public bool IsInDebug { get; set; }
         public bool SingleChannelPlugin
@@ -48,6 +48,8 @@ namespace FChatSharpLib.Entities.Plugin
             AddPage(new LeaveChannelPage(this));
             AddPage(new ExecuteCommandPage(this));
             AddPage(new StopListeningChannelPage(this));
+            AddPage(new BroadcastMessagePage(this));
+            AddPage(new SendMessagePage(this));
             SetPage<MainPage>();
         }
 
@@ -69,7 +71,8 @@ namespace FChatSharpLib.Entities.Plugin
             Console.WriteLine("Loaded commands: " + string.Join(", ", GetCommandList()));
 
             //get the type of the class
-            FieldInfo finfo = this.GetType().BaseType.BaseType.GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).First();
+            var finfos = GetFieldInfosIncludingBaseClasses(this.GetType(), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            FieldInfo finfo = finfos.First(x => x.DeclaringType.FullName == "EasyConsole.Program" && x.Name == "<Title>k__BackingField");
             finfo.SetValue(this, $"{Name} ({Version})");
         }
 
@@ -95,7 +98,7 @@ namespace FChatSharpLib.Entities.Plugin
             try
             {
                 var deserializedObject = JsonConvert.DeserializeObject<ReceivedPluginCommandEventArgs>(unparsedMessage);
-                
+
             }
             catch (Exception ex)
             {
@@ -127,7 +130,7 @@ namespace FChatSharpLib.Entities.Plugin
         {
             var type = typeof(BaseCommand<>);
             var types = AppDomain.CurrentDomain.GetAssemblies().SelectMany(s => s.GetTypes()).Where(p => p.IsClass && !p.IsAbstract && p.IsPublic && IsAssignableToGenericType(p, typeof(BaseCommand<>)));
-            var listOfTypes = types.Select(x => x.Name).Where(x => x != "BaseCommand`1").Distinct();
+            var listOfTypes = types.Select(x => x.Name.Split("`").FirstOrDefault()).Where(x => x != "BaseCommand`1").Distinct();
             return listOfTypes.ToList();
         }
 
@@ -138,6 +141,8 @@ namespace FChatSharpLib.Entities.Plugin
 
         public bool ExecuteCommand(string characterCalling, string command, IEnumerable<string> args, string channel)
         {
+            command = command.ToLower();
+
             if (DoesCommandExist(command))
             {
                 try
@@ -145,9 +150,15 @@ namespace FChatSharpLib.Entities.Plugin
                     var thisType = this.GetType();
                     var searchedType = typeof(BaseCommand<>);
                     var types = AppDomain.CurrentDomain.GetAssemblies().SelectMany(s => s.GetTypes()).Where(p => IsAssignableToGenericType(p, typeof(BaseCommand<>)));
-                    var typeToCreate = types.FirstOrDefault(x => x.Name.ToLower() == command.ToLower());
+                    var typeToCreate = types.FirstOrDefault(x => x.Name.Split("`").FirstOrDefault().ToLower() == command.ToLower());
                     if (typeToCreate != null)
                     {
+                        if (this.GetType().BaseType != null && this.GetType().BaseType.IsGenericType && typeToCreate.IsGenericType)
+                        {
+                            var genericArgs = this.GetType().BaseType.GenericTypeArguments;
+                            typeToCreate = typeToCreate.MakeGenericType(genericArgs);
+                        }
+
                         var instance = Activator.CreateInstance(typeToCreate);
                         instance.GetType().InvokeMember(nameof(BaseCommand<DummyPlugin>.Plugin), BindingFlags.Instance | BindingFlags.Public | BindingFlags.SetProperty, Type.DefaultBinder, instance, new object[] { this });
                         if (!string.IsNullOrWhiteSpace(channel))
@@ -162,9 +173,9 @@ namespace FChatSharpLib.Entities.Plugin
                 }
                 catch (Exception ex)
                 {
-                    if(FChatClient != null && FChatClient.State != null && FChatClient.State.IsBotReady)
+                    if (FChatClient != null && FChatClient.State != null && FChatClient.State.IsBotReady)
                     {
-                        if(ex.InnerException != null)
+                        if (ex.InnerException != null)
                         {
                             FChatClient.SendMessageInChannel($"Error: {ex.InnerException.Message}", channel);
                         }
@@ -184,7 +195,7 @@ namespace FChatSharpLib.Entities.Plugin
         public void OnPluginLoad()
         {
             PluginId = System.Guid.NewGuid();
-            FChatClient = new RemoteBotController();
+            FChatClient = new RemoteBotController(IsInDebug);
 
             if (!IsInDebug)
             {
@@ -207,11 +218,11 @@ namespace FChatSharpLib.Entities.Plugin
 
         private void Events_ReceivedStateUpdate(object sender, ReceivedStateUpdateEventArgs e)
         {
-            if((DateTime.Now - LastTimeJoinMissingChannelsCalled).TotalMilliseconds > 5000)
+            if ((DateTime.Now - LastTimeJoinMissingChannelsCalled).TotalMilliseconds > 5000)
             {
                 LastTimeJoinMissingChannelsCalled = DateTime.Now;
                 JoinRequiredChannels();
-            }            
+            }
         }
 
         private void FChatClient_BotConnected(object sender, EventArgs e)
@@ -258,6 +269,62 @@ namespace FChatSharpLib.Entities.Plugin
         public void RemoveHandledChannel(string channel)
         {
             Channels.RemoveAll(x => x.ToLower() == channel.ToLower());
+        }
+
+        /// <summary>
+        ///   Returns all the fields of a type, working around the fact that reflection
+        ///   does not return private fields in any other part of the hierarchy than
+        ///   the exact class GetFields() is called on.
+        /// </summary>
+        /// <param name="type">Type whose fields will be returned</param>
+        /// <param name="bindingFlags">Binding flags to use when querying the fields</param>
+        /// <returns>All of the type's fields, including its base types</returns>
+        public static FieldInfo[] GetFieldInfosIncludingBaseClasses(
+            Type type, BindingFlags bindingFlags
+        )
+        {
+            FieldInfo[] fieldInfos = type.GetFields(bindingFlags);
+
+            // If this class doesn't have a base, don't waste any time
+            if (type.BaseType == typeof(object))
+            {
+                return fieldInfos;
+            }
+            else
+            { // Otherwise, collect all types up to the furthest base class
+                var fieldInfoList = new List<FieldInfo>(fieldInfos);
+                while (type.BaseType != typeof(object))
+                {
+                    type = type.BaseType;
+                    fieldInfos = type.GetFields(bindingFlags);
+
+                    // Look for fields we do not have listed yet and merge them into the main list
+                    for (int index = 0; index < fieldInfos.Length; ++index)
+                    {
+                        bool found = false;
+
+                        for (int searchIndex = 0; searchIndex < fieldInfoList.Count; ++searchIndex)
+                        {
+                            bool match =
+                                (fieldInfoList[searchIndex].DeclaringType == fieldInfos[index].DeclaringType) &&
+                                (fieldInfoList[searchIndex].Name == fieldInfos[index].Name);
+
+                            if (match)
+                            {
+                                found = true;
+                                break;
+                            }
+                        }
+
+                        if (!found)
+                        {
+                            fieldInfoList.Add(fieldInfos[index]);
+                        }
+                    }
+                }
+
+                return fieldInfoList.ToArray();
+            }
         }
     }
 }

@@ -15,11 +15,33 @@ namespace FChatSharpLib.GUI.Plugins
             
         }
 
+        public static string LastCallingCharacter = "";
+        public static string LastArguments = "";
+
         public override void Display()
         {
             base.Display();
 
             BasePlugin program = (BasePlugin)Program;
+
+            if (string.IsNullOrWhiteSpace(LastCallingCharacter))
+            {
+                LastCallingCharacter = program.FChatClient.State.BotCharacterName;
+            }
+
+            var channels = program.Channels;
+            var channel = "";
+
+            if (channels.Count > 1)
+            {
+                for (int i = 0; i < channels.Count; i++)
+                {
+                    Output.WriteLine($"#{i + 1}: {channels[i]}");
+                }
+                var inputChannel = Input.ReadInt("Please enter the channel # to send the command in:", 1, channels.Count);
+
+                channel = channels[inputChannel - 1];
+            }
 
             var commands = program.GetCommandList();
 
@@ -30,14 +52,16 @@ namespace FChatSharpLib.GUI.Plugins
             var input = Input.ReadInt("Please enter the command # to execute:", 1, commands.Count);
             var command = commands[input - 1];
 
-            var inputCharacterName = Input.ReadString($"Please enter the character name to use to execute the command (Press Enter for \"{program.FChatClient.State.BotCharacterName}\"):");
+            var inputCharacterName = Input.ReadString($"Please enter the character name to use to execute the command (Press Enter for \"{LastCallingCharacter}\"):");
             if (string.IsNullOrWhiteSpace(inputCharacterName))
             {
-                inputCharacterName = program.FChatClient.State.BotCharacterName;
+                inputCharacterName = LastCallingCharacter;
             }
+            LastCallingCharacter = inputCharacterName;
 
             var inputArguments = Input.ReadString($"Please enter the arguments to use to execute the command:");
             var arguments = new List<string>();
+
             if (!string.IsNullOrWhiteSpace(inputArguments))
             {
                 arguments = inputArguments.Replace(" ", ",").Split(",").ToList();

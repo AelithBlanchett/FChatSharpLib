@@ -160,7 +160,7 @@ namespace FChatSharpLib
                     switch (varEvent.variable)
                     {
                         case "msg_flood":
-                            Events.FloodLimit = double.Parse(varEvent.value, CultureInfo.InvariantCulture);
+                            Events.SetFloodLimit(double.Parse(varEvent.value, CultureInfo.InvariantCulture));
                             break;
                         default:
                             break;

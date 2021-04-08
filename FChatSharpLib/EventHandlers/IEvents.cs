@@ -5,7 +5,7 @@ namespace FChatSharpLib
 {
     public interface IEvents
     {
-        double FloodLimit { get; set; }
+        double FloodLimit { get;}
         bool Debug { get; set; }
 
         event EventHandler<ReceivedPluginCommandEventArgs> ReceivedChatCommand;
@@ -16,6 +16,7 @@ namespace FChatSharpLib
         void StartListening();
         void StopListening();
         void SendCommand(string commandJson);
+        void SetFloodLimit(double floodLimit);
 
     }
 }

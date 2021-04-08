@@ -201,6 +201,32 @@ namespace FChatSharpLib
             }.ToString());
         }
 
+        public void UnModUser(string character, string channel)
+        {
+            SendCommandToServer(new RemoveChanOP()
+            {
+                character = character,
+                channel = channel
+            }.ToString());
+        }
+
+        public void GetModsInChannel(string channel)
+        {
+            SendCommandToServer(new GetChannelOperators()
+            {
+                channel = channel
+            }.ToString());
+        }
+
+        public void ChangeChannelOwner(string character, string channel)
+        {
+            SendCommandToServer(new ChangeChannelOwner()
+            {
+                character = character,
+                channel = channel
+            }.ToString());
+        }
+
         public void InviteUserToChannel(string character, string channel)
         {
             SendCommandToServer(new InviteUserToCreatedChannel()

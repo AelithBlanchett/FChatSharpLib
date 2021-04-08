@@ -15,6 +15,14 @@ namespace FChatSharpLib.Entities.Plugin.Commands
             }
         }
         public TPlugin Plugin { get; set; }
+
+
+        /// <summary>
+        /// The main function of the command.
+        /// </summary>
+        /// <param name="characterCalling">The character calling the command</param>
+        /// <param name="args">Arguments passed to the command. To get all arguments in a single line: string.Join(' ', args);</param>
+        /// <param name="channel">The channel in which the command has been executed.</param>
         public abstract void ExecuteCommand(string characterCalling, IEnumerable<string> args, string channel);
 
         public virtual void ExecutePrivateCommand(string characterCalling, IEnumerable<string> args)

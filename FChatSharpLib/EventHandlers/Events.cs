@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -25,13 +26,15 @@ namespace FChatSharpLib
         private readonly string botCharacterName;
         private bool debug;
 
-        private volatile int commandsInQueue;
-        private long lastTimeCommandReceived = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         private IModel _pubsubChannel;
+
+        private Timer _commandMonitor;
+        private ConcurrentQueue<string> _commandQueue = new ConcurrentQueue<string>();
 
         public IWebSocketEventHandler WSEventHandlers { get; set; }
 
-        public bool Debug {
+        public bool Debug
+        {
             get
             {
                 return debug;
@@ -39,7 +42,7 @@ namespace FChatSharpLib
             set
             {
                 debug = value;
-                if(WSEventHandlers != null)
+                if (WSEventHandlers != null)
                 {
                     WSEventHandlers.Debug = value;
                 }
@@ -47,6 +50,14 @@ namespace FChatSharpLib
         }
         public int DelayBetweenEachReconnection { get; }
         public double FloodLimit { get; set; } = 3.0;
+
+        private int ActualFloodLimit
+        {
+            get
+            {
+                return (int)(FloodLimit * 1000);
+            }
+        }
 
         public Events(string username, string password, string botCharacterName, bool debug, int delayBetweenEachReconnection)
         {
@@ -57,7 +68,28 @@ namespace FChatSharpLib
             DelayBetweenEachReconnection = delayBetweenEachReconnection;
             ReceivedStateUpdate += OnStateUpdate;
             ReceivedFChatEvent += ForwardFChatEventsToPlugins;
-            ReceivedChatCommand += PassChatCommandToLoadedPlugins;
+            //ReceivedChatCommand += PassChatCommandToLoadedPlugins; //Unused, see the comment in the function
+            _commandMonitor = new Timer(DequeueCommandAndSendToWS, null, 0, ActualFloodLimit);
+        }
+
+        public void SetFloodLimit(double floodLimit)
+        {
+            FloodLimit = floodLimit;
+            if(FloodLimit < 1) { FloodLimit = 1d; }
+            _commandMonitor.Change(0, ActualFloodLimit);
+        }
+
+        private void DequeueCommandAndSendToWS(object state)
+        {
+            if (WSEventHandlers == null || WSEventHandlers.WebSocketClient == null) { return; }
+            if (_commandQueue.TryDequeue(out var commandJson))
+            {
+                if (Debug)
+                {
+                    Console.WriteLine("SENT: " + commandJson);
+                }
+                WSEventHandlers.WebSocketClient.Send(commandJson);
+            }
         }
 
         public event EventHandler<ReceivedEventEventArgs> ReceivedFChatEvent
@@ -86,35 +118,25 @@ namespace FChatSharpLib
             var factory = new ConnectionFactory() { HostName = "localhost" };
             var connection = factory.CreateConnection();
             _pubsubChannel = connection.CreateModel();
-            _pubsubChannel.QueueDeclare(queue: "FChatSharpLib.StateUpdates",
-                                durable: false,
-                                exclusive: false,
-                                autoDelete: false,
-                                arguments: null);
-            _pubsubChannel.QueueDeclare(queue: "FChatSharpLib.Plugins.ToPlugins",
-                                 durable: false,
-                                 exclusive: false,
-                                 autoDelete: false,
-                                 arguments: null);
-            _pubsubChannel.QueueDeclare(queue: "FChatSharpLib.Events",
-                                durable: false,
-                                exclusive: false,
-                                autoDelete: false,
-                                arguments: null);
-            _pubsubChannel.QueueDeclare(queue: "FChatSharpLib.Plugins.FromPlugins",
-                                 durable: false,
-                                 exclusive: false,
-                                 autoDelete: false,
-                                 arguments: null);
 
-            var consumer = new EventingBasicConsumer(_pubsubChannel);
-            consumer.Received += ForwardReceivedCommandToBot;
-            _pubsubChannel.BasicConsume(queue: "FChatSharpLib.Plugins.FromPlugins",
+            _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.Plugins.FromPlugins", type: ExchangeType.Fanout);
+            _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.Plugins.ToPlugins", type: ExchangeType.Fanout);
+            _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.StateUpdates", type: ExchangeType.Fanout);
+            _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.Events", type: ExchangeType.Fanout);
+
+            //F-chat commands from plugin consumer
+            var queueNameState = _pubsubChannel.QueueDeclare().QueueName;
+            _pubsubChannel.QueueBind(queue: queueNameState,
+                              exchange: "FChatSharpLib.Plugins.FromPlugins",
+                              routingKey: "");
+
+            var consumerState = new EventingBasicConsumer(_pubsubChannel);
+            consumerState.Received += ForwardReceivedCommandToBot;
+            _pubsubChannel.BasicConsume(queue: queueNameState,
                                  autoAck: true,
-                                 consumer: consumer);
+                                 consumer: consumerState);
 
             WSEventHandlers = new DefaultWebSocketEventHandler(username, password, botCharacterName, DelayBetweenEachReconnection, Debug);
-
             WSEventHandlers.Connect();
         }
 
@@ -125,26 +147,7 @@ namespace FChatSharpLib
 
         public void SendCommand(string commandJson)
         {
-            if (WSEventHandlers == null || WSEventHandlers.WebSocketClient == null) { return; }
-            commandsInQueue++;
-            var currentTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-
-            if ((currentTime - lastTimeCommandReceived) < FloodLimit)
-            {
-                var timeElapsedSinceLastCommand = currentTime - lastTimeCommandReceived;
-                var timeToWait = (commandsInQueue * FloodLimit) - timeElapsedSinceLastCommand;
-                var millisToWait = (int)(timeToWait * 1000);
-                if(millisToWait < 1000) { millisToWait = 1000; }
-                Thread.Sleep(millisToWait);
-            }
-
-            lastTimeCommandReceived = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            commandsInQueue--;
-            WSEventHandlers.WebSocketClient.Send(commandJson);
-            if (Debug)
-            {
-                Console.WriteLine("SENT: " + commandJson);
-            }
+            _commandQueue.Enqueue(commandJson);
         }
 
         private void ForwardReceivedCommandToBot(object model, BasicDeliverEventArgs e)
@@ -161,8 +164,8 @@ namespace FChatSharpLib
             string serializedCommand = e.State.Serialize();
 
             var body = Encoding.UTF8.GetBytes(serializedCommand);
-            _pubsubChannel.BasicPublish(exchange: "",
-                                 routingKey: "FChatSharpLib.StateUpdates",
+            _pubsubChannel.BasicPublish(exchange: "FChatSharpLib.StateUpdates",
+                                 routingKey: "",
                                  basicProperties: null,
                                  body: body);
         }
@@ -170,20 +173,22 @@ namespace FChatSharpLib
         public void ForwardFChatEventsToPlugins(object sender, ReceivedEventEventArgs e)
         {
             var body = Encoding.UTF8.GetBytes(e.Event.ToString());
-            _pubsubChannel.BasicPublish(exchange: "",
-                                 routingKey: "FChatSharpLib.Events",
+            _pubsubChannel.BasicPublish(exchange: "FChatSharpLib.Events",
+                                 routingKey: "",
                                  basicProperties: null,
                                  body: body);
         }
 
         public void PassChatCommandToLoadedPlugins(object sender, ReceivedPluginCommandEventArgs e)
         {
-            string serializedCommand = JsonConvert.SerializeObject(e);
-            var body = Encoding.UTF8.GetBytes(serializedCommand);
-            _pubsubChannel.BasicPublish(exchange: "",
-                                 routingKey: "FChatSharpLib.Plugins.ToPlugins",
-                                 basicProperties: null,
-                                 body: body);
+            //There's no need to communicate this anymore, the plugins are handling the events directly by themselves.
+
+            //string serializedCommand = JsonConvert.SerializeObject(e);
+            //var body = Encoding.UTF8.GetBytes(serializedCommand);
+            //_pubsubChannel.BasicPublish(exchange: "FChatSharpLib.Plugins.ToPlugins",
+            //                     routingKey: "",
+            //                     basicProperties: null,
+            //                     body: body);
         }
 
 

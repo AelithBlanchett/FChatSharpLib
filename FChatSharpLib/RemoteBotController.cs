@@ -17,7 +17,7 @@ namespace FChatSharpLib
     public class RemoteBotController : BaseBot
     {
 
-        public RemoteBotController() : base(new RemoteEvents())
+        public RemoteBotController(bool debug = false) : base(new RemoteEvents(debug))
         {
         }
 
