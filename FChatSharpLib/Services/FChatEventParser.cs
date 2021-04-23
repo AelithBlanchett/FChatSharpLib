@@ -38,7 +38,7 @@ namespace FChatSharpLib.Entities.Events
                     {
                         var castedEvent = (Message)detectedEvent;
                         if (castedEvent == null) { return; }
-                        messageText = castedEvent.message;
+                        messageText = castedEvent.message?.Trim();
                         channel = castedEvent.channel;
                         character = castedEvent.character;
                     }
@@ -46,7 +46,7 @@ namespace FChatSharpLib.Entities.Events
                     {
                         var castedEvent = (PrivateMessage)detectedEvent;
                         if (castedEvent == null) { return; }
-                        messageText = castedEvent.message;
+                        messageText = castedEvent.message?.Trim();
                         channel = "";
                         character = castedEvent.character;
                     }

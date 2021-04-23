@@ -94,6 +94,14 @@ namespace FChatSharpLib
                     var rllEvent = (FChatSharpLib.Entities.Events.Server.RollResult)e.Event;
                     RollResultReceived?.Invoke(this, rllEvent);
                     break;
+                case nameof(Entities.Events.Server.Message):
+                    var msgEvent = (FChatSharpLib.Entities.Events.Server.Message)e.Event;
+                    ChannelMessageReceived?.Invoke(this, msgEvent);
+                    break;
+                case nameof(Entities.Events.Server.PrivateMessage):
+                    var prvEvent = (FChatSharpLib.Entities.Events.Server.PrivateMessage)e.Event;
+                    PrivateMessageReceived?.Invoke(this, prvEvent);
+                    break;
                 default:
                     break;
             }
@@ -112,6 +120,8 @@ namespace FChatSharpLib
         public event EventHandler<Entities.Events.Server.InitialChannelData> BotCreatedChannel;
         public event EventHandler<Entities.EventHandlers.ReceivedStateUpdateEventArgs> BotConnected;
         public event EventHandler<Entities.Events.Server.RollResult> RollResultReceived;
+        public event EventHandler<Entities.Events.Server.Message> ChannelMessageReceived;
+        public event EventHandler<Entities.Events.Server.PrivateMessage> PrivateMessageReceived;
 
 
         // Permissions / Administration
