@@ -52,17 +52,23 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
                 {
                     Options =
                     {
-                        RemoteCertificateValidationCallback = ValidateServerCertificate
-            }
+                        RemoteCertificateValidationCallback = ValidateServerCertificate,
+                        KeepAliveInterval = TimeSpan.FromSeconds(3)
+                    }
                 });
 
                 _webSocketClient = new WebsocketClient(new Uri(url), factory);
-
-                _webSocketClient.ReconnectTimeout = TimeSpan.FromMilliseconds(delayBeforeReconnectInMs);
-                _webSocketClient.ErrorReconnectTimeout = TimeSpan.FromMilliseconds(delayBeforeReconnectInMs);
-                _webSocketClient.DisconnectionHappened.Subscribe(type => this.OnClose(this, type));
-                _webSocketClient.MessageReceived.Subscribe(type => this.OnMessage(this, type));
+                ListenToWsEvents(_webSocketClient, delayBeforeReconnectInMs);
+                _webSocketClient.ReconnectionHappened.Subscribe(info => OnOpen(this, null));
             }
+        }
+
+        public void ListenToWsEvents(WebsocketClient websocketClient, int delayBeforeReconnectInMs)
+        {
+            _webSocketClient.ReconnectTimeout = TimeSpan.FromMilliseconds(delayBeforeReconnectInMs);
+            _webSocketClient.ErrorReconnectTimeout = TimeSpan.FromMilliseconds(delayBeforeReconnectInMs*4);
+            _webSocketClient.DisconnectionHappened.Subscribe(type => this.OnClose(this, type));
+            _webSocketClient.MessageReceived.Subscribe(type => this.OnMessage(this, type));
         }
 
         public abstract void OnOpen(object sender, EventArgs e);

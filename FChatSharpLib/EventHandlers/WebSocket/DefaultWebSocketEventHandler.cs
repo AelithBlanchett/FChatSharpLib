@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Websocket.Client;
 
@@ -45,16 +46,12 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
             Console.WriteLine($"Closed connection. {e?.ToString()}.");
             Console.WriteLine($"Exception:  {e?.Exception?.ToString()}.");
             Console.WriteLine($"Retyring again in {DelayBetweenEachReconnection}ms.");
-            System.Threading.Thread.Sleep(DelayBetweenEachReconnection);
-            this.Connect();
         }
 
         public override void OnError(object sender, DisconnectionInfo e)
         {
             Console.WriteLine($"Connection closed with error. Code:  {e?.ToString()}.");
             Console.WriteLine($"Retyring again in {DelayBetweenEachReconnection}ms.");
-            System.Threading.Thread.Sleep(DelayBetweenEachReconnection);
-            this.Connect();
         }
 
         public override void OnMessage(object sender, ResponseMessage e)
@@ -92,7 +89,6 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
         public override void Connect()
         {
             InitializeWsClient(_url, DelayBetweenEachReconnection);
-            OnOpen(this, null);
             WebSocketClient.Start().Wait();
         }
     }
