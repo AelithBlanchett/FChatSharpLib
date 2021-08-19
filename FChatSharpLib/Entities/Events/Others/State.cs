@@ -52,7 +52,8 @@ namespace FChatSharpLib.Entities.Events.Helpers
             {
                 CharactersInfos.TryAdd(character, new CharacterState()
                 {
-                    Character = character
+                    Character = character,
+                    LastUpdate = DateTime.UtcNow
                 });
             }
 

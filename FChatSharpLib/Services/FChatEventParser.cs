@@ -112,7 +112,8 @@ namespace FChatSharpLib.Entities.Events
                                 Character = item[0].ToString(),
                                 Gender = GetEnumEquivalent<GenderEnum>(item[1].ToString().ToLower()),
                                 Status = GetEnumEquivalent<StatusEnum>(item[2].ToString().ToLower()),
-                                StatusText = item[3].ToString()
+                                StatusText = item[3].ToString(),
+                                LastUpdate = DateTime.UtcNow
                             });
                         }
                     }

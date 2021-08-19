@@ -104,6 +104,7 @@ namespace FChatSharpLib
                             existingState.Gender = characterState.Gender;
                             existingState.Status = characterState.Status;
                             existingState.StatusText = characterState.StatusText;
+                            existingState.LastUpdate = DateTime.UtcNow;
                         }
                     }
                     break;
@@ -112,6 +113,7 @@ namespace FChatSharpLib
                     var charInfoSta = State.CharactersInfos.GetValueOrDefault(staEvent.character.ToLower());
                     charInfoSta.Status = FChatEventParser.GetEnumEquivalent<StatusEnum>(staEvent.status.ToLower());
                     charInfoSta.StatusText = charInfoSta.StatusText;
+                    charInfoSta.LastUpdate = DateTime.UtcNow;
                     break;
                 case nameof(FChatSharpLib.Entities.Events.Server.OnlineNotification):
                     var nlnEvent = (FChatSharpLib.Entities.Events.Server.OnlineNotification)e.Event;
@@ -122,7 +124,8 @@ namespace FChatSharpLib
                         {
                             Character = nlnEvent.identity,
                             Gender = FChatEventParser.GetEnumEquivalent<GenderEnum>(nlnEvent.gender.ToLower()),
-                            Status = FChatEventParser.GetEnumEquivalent<StatusEnum>(nlnEvent.status.ToLower())
+                            Status = FChatEventParser.GetEnumEquivalent<StatusEnum>(nlnEvent.status.ToLower()),
+                            LastUpdate = DateTime.UtcNow
                         };
                         State.CharactersInfos.TryAdd(charInfoNln.Character.ToLower(), charInfoNln);
                     }
