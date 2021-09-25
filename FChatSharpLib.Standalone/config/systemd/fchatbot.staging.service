@@ -1,0 +1,18 @@
+[Unit]
+Description=FChatSharp - Staging - Bot
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/screen -mdS staging.fchatbot /bin/bash -c 'env ASPNETCORE_ENVIRONMENT=Staging /usr/bin/dotnet /var/www/vc/staging/fchatbot/FChatSharp.dll --configuration Release'
+ExecStop=/usr/bin/screen -S staging.fchatbot -X quit
+User=cityseventeen
+WorkingDirectory=/var/www/vc/staging/fchatbot
+KillMode=process
+KillSignal=SIGTERM
+TimeoutStopSec=5min
+Restart=always
+RestartSec=120
+
+[Install]
+WantedBy=multi-user.target
