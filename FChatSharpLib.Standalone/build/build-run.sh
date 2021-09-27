@@ -20,16 +20,16 @@ service fchatbot.$lower_environment stop
 rm -rf /var/www/vc/$lower_environment/fchatbot/*
 
 # Copying files to destination
-cp -rf $cwd/../bin/Release/net5.0/linux-x64/publish/* /var/www/vc/$lower_environment/fchatbot/
+cp -rf $cwd/../bin/Release/netcoreapp2.1/linux-x64/publish/* /var/www/vc/$lower_environment/fchatbot/
 
 # ONCE - Copy service files
-#cp -rf $cwd/../config/systemd/*$lower_environment*.service /etc/systemd/system/
+cp -rf $cwd/../config/systemd/*$lower_environment*.service /etc/systemd/system/
 
 #Return to initial directory
 cd $cwd
 
 # ONCE - Enable new Service files and Apache files
-#systemctl daemon-reload
+systemctl daemon-reload
 
 # Start service
 service fchatbot.$lower_environment start
