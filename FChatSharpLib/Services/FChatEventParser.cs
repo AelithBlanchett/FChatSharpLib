@@ -1,6 +1,7 @@
 ﻿using FChatSharpLib.Entities.EventHandlers;
 using FChatSharpLib.Entities.Events.Helpers;
 using FChatSharpLib.Entities.Events.Server;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -130,7 +131,7 @@ namespace FChatSharpLib.Entities.Events
                     {
                         if(splittedData[0] != "VAR")
                         {
-                            Console.WriteLine(ex.ToString());
+                            FChatSharpHost.Logger.LogError(ex.ToString());
                         }
                     }
 
@@ -143,7 +144,7 @@ namespace FChatSharpLib.Entities.Events
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(ex.ToString());
+                        FChatSharpHost.Logger.LogError(ex.ToString());
                     }
                 }
             }

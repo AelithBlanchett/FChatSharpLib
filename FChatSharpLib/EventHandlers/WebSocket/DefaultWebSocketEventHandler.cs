@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Websocket.Client;
+using Microsoft.Extensions.Logging;
 
 
 namespace FChatSharpLib.Entities.EventHandlers.WebSocket
@@ -43,22 +44,22 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
 
         public override void OnClose(object sender, DisconnectionInfo e)
         {
-            Console.WriteLine($"Closed connection. {e?.ToString()}.");
-            Console.WriteLine($"Exception:  {e?.Exception?.ToString()}.");
-            Console.WriteLine($"Retyring again in {DelayBetweenEachReconnection}ms.");
+            FChatSharpHost.Logger.LogError($"Closed connection. {e?.ToString()}.");
+            FChatSharpHost.Logger.LogError($"Exception:  {e?.Exception?.ToString()}.");
+            FChatSharpHost.Logger.LogWarning($"Retyring again in {DelayBetweenEachReconnection}ms.");
         }
 
         public override void OnError(object sender, DisconnectionInfo e)
         {
-            Console.WriteLine($"Connection closed with error. Code:  {e?.ToString()}.");
-            Console.WriteLine($"Retyring again in {DelayBetweenEachReconnection}ms.");
+            FChatSharpHost.Logger.LogError($"Connection closed with error. Code:  {e?.ToString()}.");
+            FChatSharpHost.Logger.LogWarning($"Retyring again in {DelayBetweenEachReconnection}ms.");
         }
 
         public override void OnMessage(object sender, ResponseMessage e)
         {
             if (Debug)
             {
-                Console.WriteLine(e.Text);
+                FChatSharpHost.Logger.LogDebug(e.Text);
             }
             FChatEventParser.HandleSpecialEvents(e.Text, DefaultFChatEventHandler.ReceivedFChatEvent, DefaultFChatEventHandler.ReceivedChatCommand);
         }

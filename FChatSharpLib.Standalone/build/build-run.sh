@@ -22,14 +22,21 @@ rm -rf /var/www/vc/$lower_environment/fchatbot/*
 # Copying files to destination
 cp -rf $cwd/../bin/Release/netcoreapp2.1/linux-x64/publish/* /var/www/vc/$lower_environment/fchatbot/
 
+# Creating log dir and file
+mkdir -p /var/www/vc/$lower_environment/fchatbot/Logs/
+chown -R cityseventeen:cityseventeen /var/www/vc/$lower_environment/fchatbot/Logs/
+chmod -R 775 /var/www/vc/$lower_environment/fchatbot/Logs/
+touch /var/www/vc/$lower_environment/fchatbot/Logs/logs.txt
+chown -R cityseventeen:cityseventeen /var/www/vc/$lower_environment/fchatbot/Logs/
+
 # ONCE - Copy service files
-cp -rf $cwd/../config/systemd/*$lower_environment*.service /etc/systemd/system/
+#cp -rf $cwd/../config/systemd/*$lower_environment*.service /etc/systemd/system/
 
 #Return to initial directory
 cd $cwd
 
 # ONCE - Enable new Service files and Apache files
-systemctl daemon-reload
+#systemctl daemon-reload
 
 # Start service
 service fchatbot.$lower_environment start

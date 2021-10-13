@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Security;
@@ -45,7 +46,7 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
             if (sslPolicyErrors == SslPolicyErrors.None)
                 return true;
 
-            Console.WriteLine("Certificate error: {0}", sslPolicyErrors);
+            FChatSharpHost.Logger.LogWarning("Certificate error: {0}", sslPolicyErrors);
 
             // Do not allow this client to communicate with unauthenticated servers unless it's F-list's public key.
             return ValidateServerCertificateWithPublicKey(sender, certificate, chain, sslPolicyErrors);
