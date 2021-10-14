@@ -20,7 +20,7 @@ service fchatbot.$lower_environment stop
 rm -rf /var/www/vc/$lower_environment/fchatbot/*
 
 # Copying files to destination
-cp -rf $cwd/../bin/Release/netcoreapp2.1/linux-x64/publish/* /var/www/vc/$lower_environment/fchatbot/
+cp -rf $cwd/../bin/Release/net5.0/linux-x64/publish/* /var/www/vc/$lower_environment/fchatbot/
 
 # Creating log dir and file
 mkdir -p /var/www/vc/$lower_environment/fchatbot/Logs/
