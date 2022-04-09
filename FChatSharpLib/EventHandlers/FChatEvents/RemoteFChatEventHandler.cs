@@ -21,9 +21,9 @@ namespace FChatSharpLib.Entities.EventHandlers.FChatEvents
         public static EventHandler<ReceivedStateUpdateEventArgs> ReceivedStateUpdate;
         private static IModel _pubsubChannel;
 
-        public static void Connect()
+        public static void Connect(string hostname = "localhost")
         {
-            var factory = new ConnectionFactory() { HostName = "localhost" };
+            var factory = new ConnectionFactory() { HostName = hostname };
             var connection = factory.CreateConnection();
             _pubsubChannel = connection.CreateModel();
             _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.Plugins.FromPlugins", type: ExchangeType.Fanout);

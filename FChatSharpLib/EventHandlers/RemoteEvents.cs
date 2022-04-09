@@ -10,11 +10,14 @@ namespace FChatSharpLib
 {
     public class RemoteEvents : IEvents
     {
+        private readonly string hostname;
+
         public double FloodLimit { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
         public bool Debug { get; set; }
 
-        public RemoteEvents(bool debug)
+        public RemoteEvents(string hostname = "localhost", bool debug = false)
         {
+            this.hostname = hostname;
             Debug = debug;
         }
 
@@ -40,7 +43,7 @@ namespace FChatSharpLib
 
         public void StartListening()
         {
-            RemoteFChatEventHandler.Connect();
+            RemoteFChatEventHandler.Connect(hostname);
         }
 
         public void StopListening()

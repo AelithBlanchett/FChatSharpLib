@@ -27,14 +27,16 @@ namespace FChatSharpLib
         private string _username;
         private string _password;
         private bool _debug;
+        private string _hostname;
         private int _delayBetweenEachReconnection;
         private Timer _stateUpdateMonitor;
 
-        public Bot(string username, string password, string botCharacterName, string administratorCharacterName) : base(null)
+        public Bot(string username, string password, string botCharacterName, string administratorCharacterName, string hostname = "localhost") : base(null)
         {
             _username = username;
             _password = password;
             _debug = false;
+            _hostname = hostname;
             _delayBetweenEachReconnection = 4000;
             State.AdminCharacterName = administratorCharacterName;
             State.BotCharacterName = botCharacterName;
@@ -48,7 +50,7 @@ namespace FChatSharpLib
 
         public override void Connect()
         {
-            Events = new Events(_username, _password, State.BotCharacterName, _debug, _delayBetweenEachReconnection);
+            Events = new Events(_username, _password, State.BotCharacterName, _debug, _delayBetweenEachReconnection, _hostname);
             Events.ReceivedPluginRawData += Events_ReceivedPluginRawData;
             base.Connect();
             _stateUpdateMonitor = new Timer(AutoUpdateState, null, 0, 500);

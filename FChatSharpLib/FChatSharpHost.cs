@@ -20,6 +20,7 @@ namespace FChatSharpLib
         public string Password { get; }
         public string BotCharacterName { get; }
         public string AdministratorCharacterName { get; }
+        public string Hostname { get; }
         public bool Debug { get; }
         public int DelayBetweenEachReconnection { get; }
         public static ILogger<FChatSharpHost> Logger { get; set;  }
@@ -31,6 +32,7 @@ namespace FChatSharpLib
             Password = options.Password;
             BotCharacterName = options.BotCharacterName;
             AdministratorCharacterName = options.AdministratorCharacterName;
+            Hostname = options.Hostname;
             Debug = options.Debug;
             DelayBetweenEachReconnection = options.DelayBetweenEachReconnection;
             Initialize();

@@ -17,7 +17,7 @@ namespace FChatSharpLib
 
         }
 
-        public FChatSharpHostOptions(string username, string password, string botCharacterName, string administratorCharacterName, bool debug, int delayBetweenEachReconnection)
+        public FChatSharpHostOptions(string username, string password, string botCharacterName, string administratorCharacterName, bool debug, int delayBetweenEachReconnection, string hostname)
         {
             Username = username;
             Password = password;
@@ -25,12 +25,14 @@ namespace FChatSharpLib
             AdministratorCharacterName = administratorCharacterName;
             Debug = debug;
             DelayBetweenEachReconnection = delayBetweenEachReconnection;
+            Hostname = string.IsNullOrWhiteSpace(hostname) ? "localhost" : hostname;
         }
 
         public string Username { get; set; }
         public string Password  { get; set; }
         public string BotCharacterName  { get; set; }
         public string AdministratorCharacterName  { get; set; }
+        public string Hostname { get; set; }
         public bool Debug  { get; set; }
         public int DelayBetweenEachReconnection  { get; set; }
     }

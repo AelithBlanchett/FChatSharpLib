@@ -24,6 +24,7 @@ namespace FChatSharpLib
         private readonly string username;
         private readonly string password;
         private readonly string botCharacterName;
+        private readonly string hostname;
         private bool debug;
 
         private IModel _pubsubChannel;
@@ -59,11 +60,12 @@ namespace FChatSharpLib
             }
         }
 
-        public Events(string username, string password, string botCharacterName, bool debug, int delayBetweenEachReconnection)
+        public Events(string username, string password, string botCharacterName, bool debug, int delayBetweenEachReconnection, string hostname = "localhost")
         {
             this.username = username;
             this.password = password;
             this.botCharacterName = botCharacterName;
+            this.hostname = hostname;
             Debug = debug;
             DelayBetweenEachReconnection = delayBetweenEachReconnection;
             ReceivedStateUpdate += OnStateUpdate;
@@ -115,7 +117,7 @@ namespace FChatSharpLib
 
         public void StartListening()
         {
-            var factory = new ConnectionFactory() { HostName = "localhost" };
+            var factory = new ConnectionFactory() { HostName = hostname };
             var connection = factory.CreateConnection();
             _pubsubChannel = connection.CreateModel();
 

@@ -19,6 +19,7 @@ namespace FChatSharpLib.Entities.Plugin
         public BaseBot FChatClient { get; set; }
         public string Channel { get; set; }
         public List<string> Channels { get; set; }
+        public string Hostname { get; private set; }
         public string Name { get; set; }
         public string Version { get; set; }
         public Guid PluginId { get; set; }
@@ -55,7 +56,7 @@ namespace FChatSharpLib.Entities.Plugin
 
         private const string DebugChannel = "ADH-DEBUG";
 
-        private BasePlugin(string firstChannel, IEnumerable<string> allChannels, bool debug = false) : base($"Console host", breadcrumbHeader: true)
+        private BasePlugin(string firstChannel, IEnumerable<string> allChannels, bool debug = false, string hostname = "localhost") : base($"Console host", breadcrumbHeader: true)
         {
             IsInDebug = debug;
             if (!IsInDebug && firstChannel == DebugChannel)
@@ -65,6 +66,7 @@ namespace FChatSharpLib.Entities.Plugin
 
             Channel = firstChannel;
             Channels = allChannels.ToList();
+            Hostname = hostname;
 
             InitializePlugin();
             OnPluginLoad();
@@ -79,15 +81,15 @@ namespace FChatSharpLib.Entities.Plugin
         /// <summary>
         /// Should only be used for debug purposes.
         /// </summary>
-        public BasePlugin(bool debug) : this(DebugChannel, new List<string>() { DebugChannel }, debug)
+        public BasePlugin(bool debug, string hostname = "localhost") : this(DebugChannel, new List<string>() { DebugChannel }, debug, hostname)
         {
         }
 
-        public BasePlugin(string channel, bool debug = false) : this(channel, new List<string>() { channel }, debug)
+        public BasePlugin(string channel, bool debug = false, string hostname = "localhost") : this(channel, new List<string>() { channel }, debug, hostname)
         {
         }
 
-        public BasePlugin(IEnumerable<string> channels, bool debug = false) : this(channels.First(), channels, debug)
+        public BasePlugin(IEnumerable<string> channels, bool debug = false, string hostname = "localhost") : this(channels.First(), channels, debug, hostname)
         {
         }
 
@@ -195,7 +197,7 @@ namespace FChatSharpLib.Entities.Plugin
         public void OnPluginLoad()
         {
             PluginId = System.Guid.NewGuid();
-            FChatClient = new RemoteBotController(IsInDebug);
+            FChatClient = new RemoteBotController(Hostname, IsInDebug);
 
             if (!IsInDebug)
             {
