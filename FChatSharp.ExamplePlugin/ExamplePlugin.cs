@@ -12,9 +12,11 @@ namespace FChatSharp.ExamplePlugin
     public class ExamplePlugin : BasePlugin, ISingletonDependency
     {
         public Timer KickMonitor { get; set; }
+        public IOptions<ExamplePluginOptions> ExamplePluginOptions { get; }
 
         public ExamplePlugin(IOptions<ExamplePluginOptions> pluginOptions, RemoteBotController fChatClient) : base(pluginOptions, fChatClient)
         {
+            ExamplePluginOptions = pluginOptions;
             StartTimers();
             Run();
         }

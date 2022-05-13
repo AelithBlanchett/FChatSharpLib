@@ -10,12 +10,13 @@ using RabbitMQ.Client;
 using Serilog;
 using Serilog.Events;
 
-namespace FChatSharp
+namespace FChatSharp.Host
 {
     public class Program
     {
         public static async Task<int> Main(string[] args)
         {
+            Directory.CreateDirectory("logs");
             Log.Logger = new LoggerConfiguration()
 #if DEBUG
                 .MinimumLevel.Debug()
@@ -24,7 +25,7 @@ namespace FChatSharp
 #endif
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
                 .Enrich.FromLogContext()
-                .WriteTo.Async(c => c.File("Logs/logs.txt"))
+                .WriteTo.Async(c => c.File("logs/logs.txt"))
                 .WriteTo.Async(c => c.Console())
                 .CreateLogger();
 
@@ -48,7 +49,7 @@ namespace FChatSharp
         }
 
         internal static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
+            Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder(args)
                 .UseSerilog()
                 .ConfigureAppConfiguration((context, config) =>
                 {
@@ -62,8 +63,6 @@ namespace FChatSharp
                     services.AddHostedService<FChatSharpHost>();
                     services.AddSingleton<Bot>();
                     services.AddSingleton<Events>();
-                    services.AddSingleton<RemoteEvents>();
-                    services.AddSingleton<RemoteBotController>();
                     services.AddSingleton<IWebSocketEventHandler, DefaultWebSocketEventHandler>();
                 });
     }
