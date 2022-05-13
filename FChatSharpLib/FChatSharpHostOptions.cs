@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace FChatSharpLib
 {
-    public class FChatSharpHostOptions
+    public class FChatSharpHostOptions : IFChatSharpOptions
     {
         public FChatSharpHostOptions()
         {
@@ -29,11 +29,11 @@ namespace FChatSharpLib
         }
 
         public string Username { get; set; }
-        public string Password  { get; set; }
-        public string BotCharacterName  { get; set; }
-        public string AdministratorCharacterName  { get; set; }
+        public string Password { get; set; }
+        public string BotCharacterName { get; set; }
+        public string AdministratorCharacterName { get; set; }
         public string Hostname { get; set; }
-        public bool Debug  { get; set; }
-        public int DelayBetweenEachReconnection  { get; set; }
+        public bool Debug { get; set; }
+        public int DelayBetweenEachReconnection { get; set; }
     }
 }

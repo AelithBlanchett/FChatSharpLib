@@ -6,7 +6,6 @@ After=network.target
 Type=forking
 ExecStart=/usr/bin/screen -mdS production.fchatbot /bin/bash -c 'env ASPNETCORE_ENVIRONMENT=Production /usr/bin/dotnet /var/www/vc/production/fchatbot/FChatSharp.dll --configuration Release'
 ExecStop=/usr/bin/screen -S production.fchatbot -X quit
-User=cityseventeen
 WorkingDirectory=/var/www/vc/production/fchatbot
 KillMode=process
 KillSignal=SIGTERM

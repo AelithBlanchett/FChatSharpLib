@@ -4,6 +4,7 @@ using FChatSharpLib.Entities.EventHandlers.FChatEvents;
 using FChatSharpLib.Entities.EventHandlers.WebSocket;
 using FChatSharpLib.Entities.Events.Client;
 using FChatSharpLib.Services;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -21,10 +22,6 @@ namespace FChatSharpLib
 {
     public class Events : IEvents
     {
-        private readonly string username;
-        private readonly string password;
-        private readonly string botCharacterName;
-        private readonly string hostname;
         private bool debug;
 
         private IModel _pubsubChannel;
@@ -49,7 +46,6 @@ namespace FChatSharpLib
                 }
             }
         }
-        public int DelayBetweenEachReconnection { get; }
         public double FloodLimit { get; set; } = 3.0;
 
         private int ActualFloodLimit
@@ -60,14 +56,15 @@ namespace FChatSharpLib
             }
         }
 
-        public Events(string username, string password, string botCharacterName, bool debug, int delayBetweenEachReconnection, string hostname = "localhost")
+        public IOptions<IFChatSharpOptions> Options { get; }
+        public IOptions<ConnectionFactory> RabbitMqConnectionFactory { get; }
+
+        public Events(IOptions<FChatSharpHostOptions> hostOptions, IOptions<ConnectionFactory> rabbitMqOptions, IWebSocketEventHandler wSEventHandlers)
         {
-            this.username = username;
-            this.password = password;
-            this.botCharacterName = botCharacterName;
-            this.hostname = hostname;
-            Debug = debug;
-            DelayBetweenEachReconnection = delayBetweenEachReconnection;
+            Options = hostOptions;
+            RabbitMqConnectionFactory = rabbitMqOptions;
+            WSEventHandlers = wSEventHandlers;
+            Debug = Options.Value.Debug;
             ReceivedStateUpdate += OnStateUpdate;
             ReceivedFChatEvent += ForwardFChatEventsToPlugins;
             //ReceivedChatCommand += PassChatCommandToLoadedPlugins; //Unused, see the comment in the function
@@ -116,9 +113,8 @@ namespace FChatSharpLib
 
 
         public void StartListening()
-        {
-            var factory = new ConnectionFactory() { HostName = hostname };
-            var connection = factory.CreateConnection();
+        {            
+            var connection = RabbitMqConnectionFactory.Value.CreateConnection();
             _pubsubChannel = connection.CreateModel();
 
             _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.Plugins.FromPlugins", type: ExchangeType.Fanout);
@@ -138,7 +134,6 @@ namespace FChatSharpLib
                                  autoAck: true,
                                  consumer: consumerState);
 
-            WSEventHandlers = new DefaultWebSocketEventHandler(username, password, botCharacterName, DelayBetweenEachReconnection, Debug);
             WSEventHandlers.Connect();
         }
 

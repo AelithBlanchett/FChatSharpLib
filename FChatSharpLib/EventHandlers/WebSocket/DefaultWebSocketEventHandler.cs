@@ -10,24 +10,22 @@ using System.Threading;
 using System.Threading.Tasks;
 using Websocket.Client;
 using Microsoft.Extensions.Logging;
-
+using Microsoft.Extensions.Options;
 
 namespace FChatSharpLib.Entities.EventHandlers.WebSocket
 {
     public class DefaultWebSocketEventHandler : BaseWebSocketEventHandler
     {
+        private string _webChatUrl;
 
-        public int DelayBetweenEachReconnection { get; set; }
+        public IOptions<FChatSharpHostOptions> HostOptions { get; set; }
+
         private Identification _identificationInfo;
-        private string _url;
-        private string _username;
-        private string _password;
-        private string _botCharacterName;
 
-        public DefaultWebSocketEventHandler(string username, string password, string botCharacterName, int delayBetweenEachReconnection, bool debug)
+        public DefaultWebSocketEventHandler(IOptions<FChatSharpHostOptions> hostOptions)
         {
-            DelayBetweenEachReconnection = delayBetweenEachReconnection;
-            Debug = debug;
+            HostOptions = hostOptions;
+            Debug = HostOptions.Value.Debug;
 
             int port = 9722;
             if (Debug == true)
@@ -35,24 +33,20 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
                 port = 8722;
             }
 
-            _url = $"wss://chat.f-list.net/chat2:{port}";
-
-            _username = username;
-            _password = password;
-            _botCharacterName = botCharacterName;
+            _webChatUrl = $"wss://chat.f-list.net/chat2:{port}";
         }
 
         public override void OnClose(object sender, DisconnectionInfo e)
         {
             FChatSharpHost.Logger.LogError($"Closed connection. {e?.ToString()}.");
             FChatSharpHost.Logger.LogError($"Exception:  {e?.Exception?.ToString()}.");
-            FChatSharpHost.Logger.LogWarning($"Retyring again in {DelayBetweenEachReconnection}ms.");
+            FChatSharpHost.Logger.LogWarning($"Retyring again in {HostOptions.Value.DelayBetweenEachReconnection}ms.");
         }
 
         public override void OnError(object sender, DisconnectionInfo e)
         {
             FChatSharpHost.Logger.LogError($"Connection closed with error. Code:  {e?.ToString()}.");
-            FChatSharpHost.Logger.LogWarning($"Retyring again in {DelayBetweenEachReconnection}ms.");
+            FChatSharpHost.Logger.LogWarning($"Retyring again in {HostOptions.Value.DelayBetweenEachReconnection}ms.");
         }
 
         public override void OnMessage(object sender, ResponseMessage e)
@@ -67,16 +61,16 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
         public override void OnOpen(object sender, EventArgs e)
         {
             //Token to authenticate on F-list
-            var ticket = FListClient.GetTicket(_username, _password);
+            var ticket = FListClient.GetTicket(HostOptions.Value.Username, HostOptions.Value.Password);
 
             var identificationInfo = new Identification()
             {
-                account = _username,
+                account = HostOptions.Value.Username,
                 botVersion = "1.0.0",
-                character = _botCharacterName,
+                character = HostOptions.Value.BotCharacterName,
                 ticket = ticket,
                 method = "ticket",
-                botCreator = _username
+                botCreator = HostOptions.Value.Username
             };
 
             WebSocketClient.Send(identificationInfo.ToString());
@@ -89,7 +83,7 @@ namespace FChatSharpLib.Entities.EventHandlers.WebSocket
 
         public override void Connect()
         {
-            InitializeWsClient(_url, DelayBetweenEachReconnection);
+            InitializeWsClient(_webChatUrl, HostOptions.Value.DelayBetweenEachReconnection);
             WebSocketClient.Start().Wait();
         }
     }

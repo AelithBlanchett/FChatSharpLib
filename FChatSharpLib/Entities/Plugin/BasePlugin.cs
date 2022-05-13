@@ -2,6 +2,7 @@
 using FChatSharpLib.Entities.EventHandlers;
 using FChatSharpLib.Entities.Plugin.Commands;
 using FChatSharpLib.GUI.Plugins;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -19,11 +20,9 @@ namespace FChatSharpLib.Entities.Plugin
         public BaseBot FChatClient { get; set; }
         public string Channel { get; set; }
         public List<string> Channels { get; set; }
-        public string Hostname { get; private set; }
         public string Name { get; set; }
         public string Version { get; set; }
         public Guid PluginId { get; set; }
-        public bool IsInDebug { get; set; }
         public bool SingleChannelPlugin
         {
             get
@@ -38,6 +37,8 @@ namespace FChatSharpLib.Entities.Plugin
                 return Channels.Count();
             }
         }
+
+        public IOptions<FChatSharpPluginOptions> Options { get; }
 
         private void InitializePlugin()
         {
@@ -56,17 +57,12 @@ namespace FChatSharpLib.Entities.Plugin
 
         private const string DebugChannel = "ADH-DEBUG";
 
-        private BasePlugin(string firstChannel, IEnumerable<string> allChannels, bool debug = false, string hostname = "localhost") : base($"Console host", breadcrumbHeader: true)
+        public BasePlugin(IOptions<FChatSharpPluginOptions> options, RemoteBotController fChatClient) : base($"Console host", breadcrumbHeader: true)
         {
-            IsInDebug = debug;
-            if (!IsInDebug && firstChannel == DebugChannel)
-            {
-                throw new Exception("If you don't want to use the debug mode, use another constructor.");
-            }
-
-            Channel = firstChannel;
-            Channels = allChannels.ToList();
-            Hostname = hostname;
+            Options = options;
+            FChatClient = fChatClient;
+            Channel = Options.Value.Channels.First();
+            Channels = Options.Value.Channels;
 
             InitializePlugin();
             OnPluginLoad();
@@ -76,21 +72,7 @@ namespace FChatSharpLib.Entities.Plugin
             var finfos = GetFieldInfosIncludingBaseClasses(this.GetType(), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             FieldInfo finfo = finfos.First(x => x.DeclaringType.FullName == "EasyConsole.Program" && x.Name == "<Title>k__BackingField");
             finfo.SetValue(this, $"{Name} ({Version})");
-        }
-
-        /// <summary>
-        /// Should only be used for debug purposes.
-        /// </summary>
-        public BasePlugin(bool debug, string hostname = "localhost") : this(DebugChannel, new List<string>() { DebugChannel }, debug, hostname)
-        {
-        }
-
-        public BasePlugin(string channel, bool debug = false, string hostname = "localhost") : this(channel, new List<string>() { channel }, debug, hostname)
-        {
-        }
-
-        public BasePlugin(IEnumerable<string> channels, bool debug = false, string hostname = "localhost") : this(channels.First(), channels, debug, hostname)
-        {
+            
         }
 
         private void ReceivedCommand(object model, BasicDeliverEventArgs ea)
@@ -197,9 +179,8 @@ namespace FChatSharpLib.Entities.Plugin
         public void OnPluginLoad()
         {
             PluginId = System.Guid.NewGuid();
-            FChatClient = new RemoteBotController(Hostname, IsInDebug);
 
-            if (!IsInDebug)
+            if (!Options.Value.Debug)
             {
                 FChatClient.Connect();
 
@@ -235,7 +216,7 @@ namespace FChatSharpLib.Entities.Plugin
 
         private void JoinRequiredChannels(bool excludeAlreadyJoinedOnes = true)
         {
-            if (!IsInDebug)
+            if (!Options.Value.Debug)
             {
                 var missingJoinedChannels = Channels.Select(x => x.ToLower());
                 if (excludeAlreadyJoinedOnes)

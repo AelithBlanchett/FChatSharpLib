@@ -22,9 +22,9 @@ namespace FChatSharpLib.GUI.Host
             FChatSharpHost program = (FChatSharpHost)Program;
 
             var input = Input.ReadInt("Press 1 to Enable debug mode or 2 if you want to disable it:", 1, 2);
-            program.Bot.Events.Debug = (input == 1);
+            program.Bot.Events.Options.Value.Debug = (input == 1);
 
-            Output.WriteLine("Debug mode is now set to: " + program.Bot.Events.Debug.ToString());
+            Output.WriteLine("Debug mode is now set to: " + program.Bot.Events.Options.Value.Debug.ToString());
 
             Input.ReadString("Press [Enter] to navigate home");
             Program.NavigateHome();

@@ -2,9 +2,11 @@
 using System.IO;
 using System.Threading.Tasks;
 using FChatSharpLib;
+using FChatSharpLib.Entities.EventHandlers.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using RabbitMQ.Client;
 using Serilog;
 using Serilog.Events;
 
@@ -30,7 +32,6 @@ namespace FChatSharp
             {
                 Log.Information("Starting console host.");
                 await CreateHostBuilder(args).RunConsoleAsync();
-                return 0;
             }
             catch (Exception ex)
             {
@@ -42,7 +43,7 @@ namespace FChatSharp
                 Log.CloseAndFlush();
             }
 
-
+            return 0;
 
         }
 
@@ -55,11 +56,15 @@ namespace FChatSharp
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
-                    FChatSharpHostOptions testOptions = new FChatSharpHostOptions();
-                    hostContext.Configuration.GetSection("Options").Bind(testOptions);
-                    services.Configure<FChatSharpHostOptions>(options => hostContext.Configuration.GetSection("Options").Bind(options)); // ONE SECOND
+                    services.Configure<FChatSharpHostOptions>(options => hostContext.Configuration.GetSection("Options").Bind(options));
+                    services.Configure<ConnectionFactory>(options => hostContext.Configuration.GetSection("RabbitMQ").Bind(options));
 
                     services.AddHostedService<FChatSharpHost>();
+                    services.AddSingleton<Bot>();
+                    services.AddSingleton<Events>();
+                    services.AddSingleton<RemoteEvents>();
+                    services.AddSingleton<RemoteBotController>();
+                    services.AddSingleton<IWebSocketEventHandler, DefaultWebSocketEventHandler>();
                 });
     }
 }

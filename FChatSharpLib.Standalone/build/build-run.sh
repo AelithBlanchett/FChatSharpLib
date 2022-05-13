@@ -1,5 +1,6 @@
 #!/bin/bash
 environment=$1
+username=cityseventeen
 lower_environment=$(echo "$environment" | awk '{print tolower($0)}')
 cwd="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
@@ -24,10 +25,10 @@ cp -rf $cwd/../bin/Release/net5.0/linux-x64/publish/* /var/www/vc/$lower_environ
 
 # Creating log dir and file
 mkdir -p /var/www/vc/$lower_environment/fchatbot/Logs/
-chown -R cityseventeen:cityseventeen /var/www/vc/$lower_environment/fchatbot/Logs/
+chown -R $username:$username /var/www/vc/$lower_environment/fchatbot/Logs/
 chmod -R 775 /var/www/vc/$lower_environment/fchatbot/Logs/
 touch /var/www/vc/$lower_environment/fchatbot/Logs/logs.txt
-chown -R cityseventeen:cityseventeen /var/www/vc/$lower_environment/fchatbot/Logs/
+chown -R $username:$username /var/www/vc/$lower_environment/fchatbot/Logs/
 
 # ONCE - Copy service files
 #cp -rf $cwd/../config/systemd/*$lower_environment*.service /etc/systemd/system/

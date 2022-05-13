@@ -1,22 +1,19 @@
-﻿using FChatSharpLib.Entities.Plugin;
+﻿using FChatSharpLib;
+using FChatSharpLib.Entities.Plugin;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using Volo.Abp.DependencyInjection;
 
 namespace FChatSharp.ExamplePlugin
 {
-    class ExamplePlugin : BasePlugin
+    public class ExamplePlugin : BasePlugin, ISingletonDependency
     {
-        private Timer _kickMonitor;
+        public Timer KickMonitor { get; set; }
 
-        public ExamplePlugin(string channel) : base(channel)
-        {
-            StartTimers();
-            Run();
-        }
-
-        public ExamplePlugin(params string[] channels) : base(channels)
+        public ExamplePlugin(IOptions<ExamplePluginOptions> pluginOptions, RemoteBotController fChatClient) : base(pluginOptions, fChatClient)
         {
             StartTimers();
             Run();
@@ -24,7 +21,7 @@ namespace FChatSharp.ExamplePlugin
 
         private void StartTimers()
         {
-            _kickMonitor = new Timer(AutoKickNonShemales, null, 1000, 5000);
+            KickMonitor = new Timer(AutoKickNonShemales, null, 1000, 5000);
             FChatClient.UserJoinedChannel += FChatClient_UserJoinedChannel;
             FChatClient.BotCreatedChannel += FChatClient_BotCreatedChannel;
         }

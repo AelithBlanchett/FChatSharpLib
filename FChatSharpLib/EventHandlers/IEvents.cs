@@ -1,12 +1,13 @@
 ﻿using System;
 using FChatSharpLib.Entities.EventHandlers;
+using Microsoft.Extensions.Options;
 
 namespace FChatSharpLib
 {
     public interface IEvents
     {
         double FloodLimit { get;}
-        bool Debug { get; set; }
+        IOptions<IFChatSharpOptions> Options { get;}
 
         event EventHandler<ReceivedPluginCommandEventArgs> ReceivedChatCommand;
         event EventHandler<ReceivedEventEventArgs> ReceivedFChatEvent;

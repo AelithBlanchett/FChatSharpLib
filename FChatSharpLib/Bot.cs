@@ -19,38 +19,25 @@ using FChatSharpLib.Entities.Events.Helpers;
 using System.Linq;
 using FChatSharpLib.Entities.EventHandlers.FChatEvents;
 using System.Globalization;
+using Microsoft.Extensions.Options;
 
 namespace FChatSharpLib
 {
     public class Bot : BaseBot
     {
-        private string _username;
-        private string _password;
-        private bool _debug;
-        private string _hostname;
-        private int _delayBetweenEachReconnection;
         private Timer _stateUpdateMonitor;
 
-        public Bot(string username, string password, string botCharacterName, string administratorCharacterName, string hostname = "localhost") : base(null)
-        {
-            _username = username;
-            _password = password;
-            _debug = false;
-            _hostname = hostname;
-            _delayBetweenEachReconnection = 4000;
-            State.AdminCharacterName = administratorCharacterName;
-            State.BotCharacterName = botCharacterName;
-        }
+        public IOptions<FChatSharpHostOptions> HostOptions { get; }
 
-        public Bot(string username, string password, string botCharacterName, string administratorCharacterName, bool debug, int delayBetweenEachReconnection) : this(username, password, botCharacterName, administratorCharacterName)
+        public Bot(IOptions<FChatSharpHostOptions> hostOptions, Events events) : base(events)
         {
-            _debug = debug;
-            _delayBetweenEachReconnection = delayBetweenEachReconnection;
+            HostOptions = hostOptions;
+            State.AdminCharacterName = HostOptions.Value.AdministratorCharacterName;
+            State.BotCharacterName = HostOptions.Value.BotCharacterName;
         }
 
         public override void Connect()
         {
-            Events = new Events(_username, _password, State.BotCharacterName, _debug, _delayBetweenEachReconnection, _hostname);
             Events.ReceivedPluginRawData += Events_ReceivedPluginRawData;
             base.Connect();
             _stateUpdateMonitor = new Timer(AutoUpdateState, null, 0, 500);
