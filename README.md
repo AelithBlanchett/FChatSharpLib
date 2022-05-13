@@ -7,8 +7,11 @@ Everything is detailed [here](https://aelithblanchett.github.io/FChatSharpLib/).
 
 ## Usage
 In your NuGet Package Manager:
+
 `Install-Package FChatSharpLib -Version 1.0.0-beta`
+
 or with the dotnet CLI tool:
+
 `dotnet add package FChatSharpLib --version 1.0.0-beta`
 
 ## Development
