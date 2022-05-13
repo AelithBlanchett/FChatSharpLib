@@ -1,44 +1,27 @@
 # FChatSharpLib
+- .NET Version: 6.0
+- This is the repository used as a source for the following NuGet package: https://www.nuget.org/packages/FChatSharpLib/
 
-Requirements:
+## How do I run my bot?
+Everything is detailed [here](https://aelithblanchett.github.io/FChatSharpLib/).
 
--Requires RabbitMQ Server to be installed and running on the host machine.
+## Usage
+In your NuGet Package Manager:
+`Install-Package FChatSharpLib -Version 1.0.0-beta`
+or with the dotnet CLI tool:
+`dotnet add package FChatSharpLib --version 1.0.0-beta`
 
--RabbitMQ requires a 64-bit supported version of Erlang for Windows to be installed.
+## Development
+Things you need to open the project:
+```
+- Visual Studio 2022 - https://visualstudio.microsoft.com/downloads/
+- .NET 6.0 SDK - https://dotnet.microsoft.com/en-us/download/dotnet/6.0
+```
 
--NetcoreApp 2.1 - does not work on versions of Visual Studio earlier than 2017
+## Contributing
 
--See F-Chat protocol for rules regarding using a Bot in F-Chat here https://wiki.f-list.net/F-Chat_Protocol#Bots
+Contact Elise Pariat / Aelith Blanchette on F-list for more information.
 
-Functions:
+## License
 
--Connect to the F-Chat server
-
--Join and leave channels
-
--Send chat messages to users or channels
-
--Update bot status
-
--Ban and unban users
-
--Listen for messages and user status updates
-
-
-Connect with:
-var bot = new FChatSharpHost("FChat_account_username", "FChat_account_password", "FChat_character_name", "administrator_character_name", true, 4000);
-
-Join public channels with: 
-Bot.JoinChannel("Development"); //Official channels are joined with the channel name
-Bot.JoinChannel("adh-7df6e9bffad6ca4e07e3"); //Custom channels are joined with the room code
-
-(remember that to join a channel with the code you must have an invite or the channel must be public)
-
-Send chat messages to characters with:
-Bot.SendPrivateMessage("hello!", "Character_name");
-
-Send chat messages to channels with:
-Bot.SendMessageInChannel("hello channel!", "adh-7df6e9bffad6ca4e07e3");
-
-
-See ExamplePlugin project for an implementation of a plugin bot that uses FChatSharpLib.
+This project is licensed under the Apache License 2.0 - see the [LICENSE.md](LICENSE.md) file for details
