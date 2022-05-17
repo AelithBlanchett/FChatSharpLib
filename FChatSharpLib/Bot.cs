@@ -32,6 +32,10 @@ namespace FChatSharpLib
         public Bot(IOptions<FChatSharpHostOptions> hostOptions, Events events) : base(events)
         {
             HostOptions = hostOptions;
+            if(hostOptions.Value == null)
+            {
+                throw new InvalidOperationException("The configuration options are missing.");
+            }
             State.AdminCharacterName = HostOptions.Value.AdministratorCharacterName;
             State.BotCharacterName = HostOptions.Value.BotCharacterName;
         }

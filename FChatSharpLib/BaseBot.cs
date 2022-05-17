@@ -128,22 +128,22 @@ namespace FChatSharpLib
 
         public bool IsUserAdmin(string character, string channel)
         {
-            return (this.IsUserOP(character, channel) || this.IsUserMaster(character));
+            return !string.IsNullOrWhiteSpace(character) && (this.IsUserOP(character, channel) || this.IsUserMaster(character));
         }
 
         public bool IsUserMaster(string character)
         {
-            return character.ToLower() == State.AdminCharacterName.ToLower();
+            return !string.IsNullOrWhiteSpace(character) && character.ToLower() == State.AdminCharacterName.ToLower();
         }
 
         public bool IsSelf(string character)
         {
-            return character.ToLower() == State.BotCharacterName.ToLower();
+            return !string.IsNullOrWhiteSpace(character) && character.ToLower() == State.BotCharacterName.ToLower();
         }
 
         public bool IsUserOP(string character, string channel)
         {
-            return (State.ChannelsInfo.GetValueOrDefault(channel.ToLower()) != null ? State.ChannelsInfo.GetValueOrDefault(channel.ToLower()).Operators.Any(x => x.ToLower() == character.ToLower()) : false);
+            return !string.IsNullOrWhiteSpace(character) && (State.ChannelsInfo.GetValueOrDefault(channel.ToLower()) != null ? State.ChannelsInfo.GetValueOrDefault(channel.ToLower()).Operators.Any(x => x.ToLower() == character.ToLower()) : false);
         }
 
 

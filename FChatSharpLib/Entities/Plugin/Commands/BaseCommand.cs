@@ -23,9 +23,9 @@ namespace FChatSharpLib.Entities.Plugin.Commands
         /// <param name="characterCalling">The character calling the command</param>
         /// <param name="args">Arguments passed to the command. To get all arguments in a single line: string.Join(' ', args);</param>
         /// <param name="channel">The channel in which the command has been executed.</param>
-        public abstract void ExecuteCommand(string characterCalling, IEnumerable<string> args, string channel);
+        public abstract Task ExecuteCommand(string characterCalling, IEnumerable<string> args, string channel);
 
-        public virtual void ExecutePrivateCommand(string characterCalling, IEnumerable<string> args)
+        public virtual async Task ExecutePrivateCommand(string characterCalling, IEnumerable<string> args)
         {
             Plugin.FChatClient.SendPrivateMessage("You cannot use that command in private.", characterCalling);
         }
