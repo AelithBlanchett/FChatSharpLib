@@ -145,13 +145,27 @@ namespace FChatSharpLib.Entities.Plugin
 
                         var instance = Activator.CreateInstance(typeToCreate);
                         instance.GetType().InvokeMember(nameof(BaseCommand<DummyPlugin>.Plugin), BindingFlags.Instance | BindingFlags.Public | BindingFlags.SetProperty, Type.DefaultBinder, instance, new object[] { this });
+                        Task result = null;
                         if (!string.IsNullOrWhiteSpace(channel))
                         {
-                            instance.GetType().InvokeMember(nameof(BaseCommand<DummyPlugin>.ExecuteCommand), BindingFlags.Instance | BindingFlags.Public | BindingFlags.InvokeMethod, Type.DefaultBinder, instance, new object[] { characterCalling, args, channel });
+                            result = (Task)instance.GetType().InvokeMember(nameof(BaseCommand<DummyPlugin>.ExecuteCommand), BindingFlags.Instance | BindingFlags.Public | BindingFlags.InvokeMethod, Type.DefaultBinder, instance, new object[] { characterCalling, args, channel });
                         }
                         else
                         {
-                            instance.GetType().InvokeMember(nameof(BaseCommand<DummyPlugin>.ExecutePrivateCommand), BindingFlags.Instance | BindingFlags.Public | BindingFlags.InvokeMethod, Type.DefaultBinder, instance, new object[] { characterCalling, args });
+                            result = (Task)instance.GetType().InvokeMember(nameof(BaseCommand<DummyPlugin>.ExecutePrivateCommand), BindingFlags.Instance | BindingFlags.Public | BindingFlags.InvokeMethod, Type.DefaultBinder, instance, new object[] { characterCalling, args });
+                        }
+
+                        if (result.Status == TaskStatus.Faulted)
+                        {
+                            if (result.Exception.InnerException != null)
+                            {
+                                FChatClient.SendMessageInChannel($"Error: {result.Exception.InnerException.Message}", channel);
+                            }
+                            else
+                            {
+                                FChatClient.SendMessageInChannel($"Error: {result.Exception.Message}", channel);
+                            }
+                            return false;
                         }
                     }
                 }
@@ -161,11 +175,11 @@ namespace FChatSharpLib.Entities.Plugin
                     {
                         if (ex.InnerException != null)
                         {
-                            FChatClient.SendMessageInChannel($"Error: {ex.InnerException.Message}", channel);
+                            FChatClient.SendMessageInChannel($"Internal error: {ex.InnerException.Message}", channel);
                         }
                         else
                         {
-                            FChatClient.SendMessageInChannel($"Error: {ex.Message}", channel);
+                            FChatClient.SendMessageInChannel($"Internal error: {ex.Message}", channel);
                         }
                     }
                     return false;
