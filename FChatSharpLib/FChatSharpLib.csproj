@@ -23,12 +23,12 @@
 
   <ItemGroup>
     <PackageReference Include="EasyConsole" Version="1.1.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="5.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="5.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-    <PackageReference Include="RabbitMQ.Client" Version="6.2.1" />
-    <PackageReference Include="Websocket.Client" Version="4.3.15" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="RabbitMQ.Client" Version="6.3.0" />
+    <PackageReference Include="Websocket.Client" Version="4.4.43" />
   </ItemGroup>
 
 </Project>

@@ -113,9 +113,12 @@ namespace FChatSharpLib
 
 
         public void StartListening()
-        {            
+        {
+            var factory = RabbitMqConnectionFactory.Value;
             var connection = RabbitMqConnectionFactory.Value.CreateConnection();
             _pubsubChannel = connection.CreateModel();
+
+            _pubsubChannel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
 
             _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.Plugins.FromPlugins", type: ExchangeType.Fanout);
             _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.Plugins.ToPlugins", type: ExchangeType.Fanout);

@@ -57,6 +57,9 @@ namespace FChatSharpLib
             var factory = RabbitMqConnectionFactory.Value;
             var connection = factory.CreateConnection();
             _pubsubChannel = connection.CreateModel();
+
+            _pubsubChannel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
+
             _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.Plugins.FromPlugins", type: ExchangeType.Fanout);
             _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.StateUpdates", type: ExchangeType.Fanout);
             _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.Events", type: ExchangeType.Fanout);

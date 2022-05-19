@@ -44,7 +44,7 @@ namespace FChatSharpLib
         {
             Events.ReceivedPluginRawData += Events_ReceivedPluginRawData;
             base.Connect();
-            _stateUpdateMonitor = new Timer(AutoUpdateState, null, 0, 500);
+            _stateUpdateMonitor = new Timer(AutoUpdateState, null, 0, 2000);
         }
 
         private void AutoUpdateState(object state)
@@ -167,13 +167,15 @@ namespace FChatSharpLib
                     break;
             }
 
-            if (triggered)
-            {
-                DefaultFChatEventHandler.ReceivedStateUpdate?.Invoke(this, new Entities.EventHandlers.ReceivedStateUpdateEventArgs()
-                {
-                    State = State
-                });
-            }
+
+            //Disabled for performance
+            //if (triggered)
+            //{
+            //    DefaultFChatEventHandler.ReceivedStateUpdate?.Invoke(this, new Entities.EventHandlers.ReceivedStateUpdateEventArgs()
+            //    {
+            //        State = State
+            //    });
+            //}
 
             base.Events_ReceivedTriggeringEvent(sender, e);
         }
