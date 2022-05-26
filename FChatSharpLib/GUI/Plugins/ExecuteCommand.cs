@@ -69,7 +69,7 @@ namespace FChatSharpLib.GUI.Plugins
 
             Output.WriteLine($"Executing command {command} with character {inputCharacterName} and arguments {string.Join(",", arguments)}...");
 
-            program.ExecuteCommand(inputCharacterName, command, arguments, program.Channel);
+            program.ExecuteCommand(inputCharacterName, command, arguments, program.Channel.ToLowerInvariant());
 
             Input.ReadString("Press [Enter] to navigate home");
             Program.NavigateHome();

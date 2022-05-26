@@ -249,7 +249,7 @@ namespace FChatSharpLib.Entities.Plugin
         {
             if (Channels.Contains(e.Channel, StringComparer.OrdinalIgnoreCase) || string.IsNullOrWhiteSpace(e.Channel)) //Null or whitespace=  private command
             {
-                ExecuteCommand(e.Character, e.Command, e.Arguments, e.Channel);
+                ExecuteCommand(e.Character, e.Command, e.Arguments, e.Channel.ToLowerInvariant());
             }
         }
 
