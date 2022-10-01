@@ -7,7 +7,7 @@ namespace FChatSharpLib.Entities.Plugin
 {
     public class DummyPlugin : BasePlugin
     {
-        private DummyPlugin() : base(null, null)
+        private DummyPlugin() : base(null, null, null)
         {
             
         }

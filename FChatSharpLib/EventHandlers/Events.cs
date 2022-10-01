@@ -4,6 +4,7 @@ using FChatSharpLib.Entities.EventHandlers.FChatEvents;
 using FChatSharpLib.Entities.EventHandlers.WebSocket;
 using FChatSharpLib.Entities.Events.Client;
 using FChatSharpLib.Services;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
@@ -30,6 +31,7 @@ namespace FChatSharpLib
         private ConcurrentQueue<string> _commandQueue = new ConcurrentQueue<string>();
 
         public IWebSocketEventHandler WSEventHandlers { get; set; }
+        public ILogger<Events> Logger { get; }
 
         public bool Debug
         {
@@ -59,34 +61,37 @@ namespace FChatSharpLib
         public IOptions<IFChatSharpOptions> Options { get; }
         public IOptions<ConnectionFactory> RabbitMqConnectionFactory { get; }
 
-        public Events(IOptions<FChatSharpHostOptions> hostOptions, IOptions<ConnectionFactory> rabbitMqOptions, IWebSocketEventHandler wSEventHandlers)
+        public Events(IOptions<FChatSharpHostOptions> hostOptions, IOptions<ConnectionFactory> rabbitMqOptions, IWebSocketEventHandler wSEventHandlers, ILogger<Events> logger)
         {
             Options = hostOptions;
             RabbitMqConnectionFactory = rabbitMqOptions;
             WSEventHandlers = wSEventHandlers;
+            Logger = logger;
             Debug = Options.Value.Debug;
             ReceivedStateUpdate += OnStateUpdate;
             ReceivedFChatEvent += ForwardFChatEventsToPlugins;
-            //ReceivedChatCommand += PassChatCommandToLoadedPlugins; //Unused, see the comment in the function
             _commandMonitor = new Timer(DequeueCommandAndSendToWS, null, 0, ActualFloodLimit);
+            //ReceivedChatCommand += PassChatCommandToLoadedPlugins; //Unused, see the comment in the function
         }
 
         public void SetFloodLimit(double floodLimit)
         {
+            Logger.LogDebug("Flood limit wants to change from {0} to {1}.", FloodLimit.ToString(), floodLimit.ToString());
             FloodLimit = floodLimit;
-            if(FloodLimit < 2) { FloodLimit = 2d; }
+            if(FloodLimit < 3d) { FloodLimit = 3d; }
             _commandMonitor.Change(0, ActualFloodLimit);
         }
 
         private void DequeueCommandAndSendToWS(object state)
         {
-            if (WSEventHandlers == null || WSEventHandlers.WebSocketClient == null) { return; }
+            if (WSEventHandlers == null || WSEventHandlers.WebSocketClient == null) {
+                Logger.LogDebug("Command was skipped: WSEventHandlers haven't been initialized yet.");
+                return; 
+            }
+
             if (_commandQueue.TryDequeue(out var commandJson))
             {
-                if (Debug)
-                {
-                    Console.WriteLine("SENT: " + commandJson);
-                }
+                Logger.LogDebug("Command sent over WS: " + commandJson);
                 WSEventHandlers.WebSocketClient.Send(commandJson);
             }
         }
@@ -137,22 +142,26 @@ namespace FChatSharpLib
                                  autoAck: true,
                                  consumer: consumerState);
 
+            Logger.LogDebug("Initialized Pub/Sub exchanges, queues and consumers, will now connect to WS.");
             WSEventHandlers.Connect();
         }
 
         public void StopListening()
         {
             WSEventHandlers.Close();
+            Logger.LogDebug("Closed WS connection.");
         }
 
         public void SendCommand(string commandJson)
         {
+            Logger.LogDebug("Enqueued command: " + commandJson);
             _commandQueue.Enqueue(commandJson);
         }
 
         private void ForwardReceivedCommandToBot(object model, BasicDeliverEventArgs e)
         {
             var body = Encoding.UTF8.GetString(e.Body.ToArray());
+            Logger.LogDebug("Received command from plugin: " + body);
             ReceivedPluginRawData?.Invoke(this, new ReceivedPluginRawDataEventArgs()
             {
                 jsonData = body
@@ -164,6 +173,7 @@ namespace FChatSharpLib
             string serializedCommand = e.State.Serialize();
 
             var body = Encoding.UTF8.GetBytes(serializedCommand);
+            Logger.LogTrace("Publishing state update with length=" + body.Length);
             _pubsubChannel.BasicPublish(exchange: "FChatSharpLib.StateUpdates",
                                  routingKey: "",
                                  basicProperties: null,
@@ -173,6 +183,7 @@ namespace FChatSharpLib
         public void ForwardFChatEventsToPlugins(object sender, ReceivedEventEventArgs e)
         {
             var body = Encoding.UTF8.GetBytes(e.Event.ToString());
+            Logger.LogTrace("Forwarding event to plugins: " + e.Event.ToString());
             _pubsubChannel.BasicPublish(exchange: "FChatSharpLib.Events",
                                  routingKey: "",
                                  basicProperties: null,

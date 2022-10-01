@@ -17,14 +17,16 @@ namespace FChatSharpLib
 
         }
 
-        public FChatSharpHostOptions(string username, string password, string botCharacterName, string administratorCharacterName, bool debug, int delayBetweenEachReconnection, string hostname)
+        public FChatSharpHostOptions(string username, string password, string botCharacterName, string administratorCharacterName, bool debug, int delayBetweenEachReconnection, bool showConsole)
         {
             Username = username;
             Password = password;
             BotCharacterName = botCharacterName;
             AdministratorCharacterName = administratorCharacterName;
             Debug = debug;
+            ShowConsole = showConsole;
             DelayBetweenEachReconnection = delayBetweenEachReconnection == 0 ? 4000 : delayBetweenEachReconnection;
+
             if (string.IsNullOrWhiteSpace(Username))
             {
                 throw new InvalidOperationException($"The {nameof(Username)} value in the configuration file is invalid: {Username}");
@@ -48,6 +50,7 @@ namespace FChatSharpLib
         public string BotCharacterName { get; set; }
         public string AdministratorCharacterName { get; set; }
         public bool Debug { get; set; } = false;
+        public bool ShowConsole { get; }
         public int DelayBetweenEachReconnection { get; set; }
     }
 }

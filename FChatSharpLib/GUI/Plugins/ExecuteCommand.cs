@@ -18,7 +18,7 @@ namespace FChatSharpLib.GUI.Plugins
         public static string LastCallingCharacter = "";
         public static string LastArguments = "";
 
-        public override void Display()
+        public async override void Display()
         {
             base.Display();
 
@@ -69,7 +69,7 @@ namespace FChatSharpLib.GUI.Plugins
 
             Output.WriteLine($"Executing command {command} with character {inputCharacterName} and arguments {string.Join(",", arguments)}...");
 
-            program.ExecuteCommand(inputCharacterName, command, arguments, program.Channel.ToLowerInvariant());
+            await program.TryExecuteCommand(inputCharacterName, command, arguments, program.Channel.ToLowerInvariant());
 
             Input.ReadString("Press [Enter] to navigate home");
             Program.NavigateHome();

@@ -62,8 +62,8 @@ namespace FChatSharp.Host
 
                     services.AddHostedService<FChatSharpHost>();
                     services.AddSingleton<Bot>();
-                    services.AddSingleton<Events>();
                     services.AddSingleton<IWebSocketEventHandler, DefaultWebSocketEventHandler>();
+                    services.AddSingleton<Events>();
                 });
     }
 }

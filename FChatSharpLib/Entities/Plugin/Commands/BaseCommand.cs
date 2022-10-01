@@ -25,9 +25,10 @@ namespace FChatSharpLib.Entities.Plugin.Commands
         /// <param name="channel">The channel in which the command has been executed.</param>
         public abstract Task ExecuteCommand(string characterCalling, IEnumerable<string> args, string channel);
 
-        public virtual async Task ExecutePrivateCommand(string characterCalling, IEnumerable<string> args)
+        public virtual Task ExecutePrivateCommand(string characterCalling, IEnumerable<string> args)
         {
             Plugin.FChatClient.SendPrivateMessage("You cannot use that command in private.", characterCalling);
+            return Task.CompletedTask;
         }
     }
 }

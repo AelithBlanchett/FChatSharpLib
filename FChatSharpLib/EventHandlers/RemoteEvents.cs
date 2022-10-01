@@ -2,6 +2,7 @@
 using FChatSharpLib.Entities.EventHandlers.FChatEvents;
 using FChatSharpLib.Entities.Events;
 using FChatSharpLib.Entities.Events.Helpers;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
@@ -19,11 +20,13 @@ namespace FChatSharpLib
         public double FloodLimit { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
         public IOptions<IFChatSharpOptions> Options { get; }
         public IOptions<ConnectionFactory> RabbitMqConnectionFactory { get; }
+        public ILogger<RemoteEvents> Logger { get; }
 
-        public RemoteEvents(IOptions<FChatSharpPluginOptions> fchatSharpHostOptions, IOptions<ConnectionFactory> rabbitMqConnectionFactory)
+        public RemoteEvents(IOptions<FChatSharpPluginOptions> fchatSharpHostOptions, IOptions<ConnectionFactory> rabbitMqConnectionFactory, ILogger<RemoteEvents> logger)
         {
             Options = fchatSharpHostOptions;
             RabbitMqConnectionFactory = rabbitMqConnectionFactory;
+            Logger = logger;
         }
 
         private static IModel _pubsubChannel;
@@ -85,6 +88,8 @@ namespace FChatSharpLib
             _pubsubChannel.BasicConsume(queue: queueNameEvents,
                                  autoAck: true,
                                  consumer: consumerEvents);
+
+            Logger.LogDebug("Initialized Pub/Sub exchanges, queues and consumers.");
         }
 
         public void StopListening()
@@ -92,6 +97,7 @@ namespace FChatSharpLib
             _pubsubChannel.Close();
             _pubsubChannel.Dispose();
             _pubsubChannel = null;
+            Logger.LogDebug("Closing all Pub/Sub exchanges, queues and consumers.");
         }
 
         public void SendCommand(string commandJson)
@@ -99,6 +105,7 @@ namespace FChatSharpLib
             if (_pubsubChannel != null)
             {
                 var body = Encoding.UTF8.GetBytes(commandJson);
+                Logger.LogDebug("Enqueued command: " + commandJson);
                 _pubsubChannel.BasicPublish(exchange: "FChatSharpLib.Plugins.FromPlugins",
                                      routingKey: "",
                                      basicProperties: null,
@@ -108,10 +115,10 @@ namespace FChatSharpLib
 
         public void SetFloodLimit(double floodLimit)
         {
-            //throw new NotImplementedException();
+            //do nothing, this is handled on the host
         }
 
-        private static void RelayServerEvents(object sender, BasicDeliverEventArgs e)
+        private void RelayServerEvents(object sender, BasicDeliverEventArgs e)
         {
             var body = Encoding.UTF8.GetString(e.Body.ToArray());
             try
@@ -120,11 +127,11 @@ namespace FChatSharpLib
             }
             catch (Exception ex)
             {
-                throw;
+                Logger.LogCritical(ex, "There was an error handling a special FChat event.");
             }
         }
 
-        private static void StateUpdate_Received(object model, BasicDeliverEventArgs ea)
+        private void StateUpdate_Received(object model, BasicDeliverEventArgs ea)
         {
             var body = ea.Body;
             var unparsedMessage = Encoding.UTF8.GetString(body.ToArray());
@@ -138,7 +145,7 @@ namespace FChatSharpLib
             }
             catch (Exception ex)
             {
-                return;
+                Logger.LogCritical(ex, "There was an error handling a FChat state update.");
             }
         }
     }

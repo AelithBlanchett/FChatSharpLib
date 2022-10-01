@@ -37,7 +37,10 @@ namespace FChatSharpLib
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             Bot.Connect();
-            Run();
+            if (Bot.HostOptions.Value.ShowConsole)
+            {
+                Run();
+            }
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)

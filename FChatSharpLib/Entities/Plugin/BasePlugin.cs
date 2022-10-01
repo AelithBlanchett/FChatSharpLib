@@ -2,6 +2,7 @@
 using FChatSharpLib.Entities.EventHandlers;
 using FChatSharpLib.Entities.Plugin.Commands;
 using FChatSharpLib.GUI.Plugins;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
@@ -18,6 +19,7 @@ namespace FChatSharpLib.Entities.Plugin
     public abstract class BasePlugin : Program, IPlugin
     {
         public BaseBot FChatClient { get; set; }
+        public ILogger<BasePlugin> Logger { get; }
         public string Channel { get; set; }
         public List<string> Channels { get; set; }
         public string Name { get; set; }
@@ -45,49 +47,37 @@ namespace FChatSharpLib.Entities.Plugin
             Name = this.GetType().Name;
             Version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
-            AddPage(new MainPage(this, Name, Version));
-            AddPage(new JoinChannelPage(this));
-            AddPage(new LeaveChannelPage(this));
-            AddPage(new ExecuteCommandPage(this));
-            AddPage(new StopListeningChannelPage(this));
-            AddPage(new BroadcastMessagePage(this));
-            AddPage(new SendMessagePage(this));
-            SetPage<MainPage>();
+            if (Options.Value.ShowConsole)
+            {
+                AddPage(new MainPage(this, Name, Version));
+                AddPage(new JoinChannelPage(this));
+                AddPage(new LeaveChannelPage(this));
+                AddPage(new ExecuteCommandPage(this));
+                AddPage(new StopListeningChannelPage(this));
+                AddPage(new BroadcastMessagePage(this));
+                AddPage(new SendMessagePage(this));
+                SetPage<MainPage>();
+            }
         }
 
         private const string DebugChannel = "ADH-DEBUG";
 
-        public BasePlugin(IOptions<FChatSharpPluginOptions> options, RemoteBotController fChatClient) : base($"Console host", breadcrumbHeader: true)
+        public BasePlugin(IOptions<FChatSharpPluginOptions> options, RemoteBotController fChatClient, ILogger<BasePlugin> logger) : base($"Console host", breadcrumbHeader: true)
         {
             Options = options;
             FChatClient = fChatClient;
+            Logger = logger;
             Channel = Options.Value.Channels.First();
             Channels = Options.Value.Channels;
 
             InitializePlugin();
             OnPluginLoad();
-            Console.WriteLine("Loaded commands: " + string.Join(", ", GetCommandList()));
+            Logger.LogInformation("Loaded commands: " + string.Join(", ", GetCommandList()));
 
             //get the type of the class
             var finfos = GetFieldInfosIncludingBaseClasses(this.GetType(), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             FieldInfo finfo = finfos.First(x => x.DeclaringType.FullName == "EasyConsole.Program" && x.Name == "<Title>k__BackingField");
             finfo.SetValue(this, $"{Name} ({Version})");
-            
-        }
-
-        private void ReceivedCommand(object model, BasicDeliverEventArgs ea)
-        {
-            var body = ea.Body;
-            var unparsedMessage = Encoding.UTF8.GetString(body.ToArray());
-            try
-            {
-                var deserializedObject = JsonConvert.DeserializeObject<ReceivedPluginCommandEventArgs>(unparsedMessage);
-
-            }
-            catch (Exception ex)
-            {
-                return;
-            }
 
         }
 
@@ -123,92 +113,96 @@ namespace FChatSharpLib.Entities.Plugin
             return GetCommandList().Exists(x => x.ToLower() == command.ToLower());
         }
 
-        public bool ExecuteCommand(string characterCalling, string command, IEnumerable<string> args, string channel)
+        public async Task<bool> TryExecuteCommand(string characterCalling, string command, IEnumerable<string> args, string channel)
         {
             command = command.ToLower();
+            Logger.LogInformation("Received potential command '{0}' sent by '{1}' in channel '{2}'.", command, characterCalling, channel);
 
-            if (DoesCommandExist(command))
+            var executionSuccessful = true;
+
+            if (!DoesCommandExist(command))
             {
+                return false;
+            }
+
+            try
+            {
+                var thisType = this.GetType();
+                var searchedType = typeof(BaseCommand<>);
+                var types = AppDomain.CurrentDomain.GetAssemblies().SelectMany(s => s.GetTypes()).Where(p => IsAssignableToGenericType(p, typeof(BaseCommand<>)));
+                var typeToCreate = types.FirstOrDefault(x => x.Name.Split("`").FirstOrDefault().ToLower() == command.ToLower());
+
+                if (typeToCreate == null)
+                {
+                    Logger.LogError("There was an error executing the '{0}' command sent by '{1}' in channel '{2}': there is no class matching the name of that command.", command, characterCalling, channel);
+                    return false;
+                }
+
+                if (this.GetType().BaseType != null && this.GetType().BaseType.IsGenericType && typeToCreate.IsGenericType)
+                {
+                    var genericArgs = this.GetType().BaseType.GenericTypeArguments;
+                    typeToCreate = typeToCreate.MakeGenericType(genericArgs);
+                }
+
+                var instance = Activator.CreateInstance(typeToCreate);
+                instance.GetType().InvokeMember(nameof(BaseCommand<DummyPlugin>.Plugin), BindingFlags.Instance | BindingFlags.Public | BindingFlags.SetProperty, Type.DefaultBinder, instance, new object[] { this });
+                Task result = null;
+
                 try
                 {
-                    var thisType = this.GetType();
-                    var searchedType = typeof(BaseCommand<>);
-                    var types = AppDomain.CurrentDomain.GetAssemblies().SelectMany(s => s.GetTypes()).Where(p => IsAssignableToGenericType(p, typeof(BaseCommand<>)));
-                    var typeToCreate = types.FirstOrDefault(x => x.Name.Split("`").FirstOrDefault().ToLower() == command.ToLower());
-                    if (typeToCreate != null)
+                    if (!string.IsNullOrWhiteSpace(channel))
                     {
-                        if (this.GetType().BaseType != null && this.GetType().BaseType.IsGenericType && typeToCreate.IsGenericType)
-                        {
-                            var genericArgs = this.GetType().BaseType.GenericTypeArguments;
-                            typeToCreate = typeToCreate.MakeGenericType(genericArgs);
-                        }
+                        result = (Task)instance.GetType().InvokeMember(nameof(BaseCommand<DummyPlugin>.ExecuteCommand), BindingFlags.Instance | BindingFlags.Public | BindingFlags.InvokeMethod, Type.DefaultBinder, instance, new object[] { characterCalling, args, channel });
+                        await result.WaitAsync(TimeSpan.FromSeconds(60));
+                    }
+                    else
+                    {
+                        result = (Task)instance.GetType().InvokeMember(nameof(BaseCommand<DummyPlugin>.ExecutePrivateCommand), BindingFlags.Instance | BindingFlags.Public | BindingFlags.InvokeMethod, Type.DefaultBinder, instance, new object[] { characterCalling, args });
+                        await result.WaitAsync(TimeSpan.FromSeconds(60));
+                    }
 
-                        var instance = Activator.CreateInstance(typeToCreate);
-                        instance.GetType().InvokeMember(nameof(BaseCommand<DummyPlugin>.Plugin), BindingFlags.Instance | BindingFlags.Public | BindingFlags.SetProperty, Type.DefaultBinder, instance, new object[] { this });
-                        Task result = null;
-                        if (!string.IsNullOrWhiteSpace(channel))
-                        {
-                            result = (Task)instance.GetType().InvokeMember(nameof(BaseCommand<DummyPlugin>.ExecuteCommand), BindingFlags.Instance | BindingFlags.Public | BindingFlags.InvokeMethod, Type.DefaultBinder, instance, new object[] { characterCalling, args, channel });
-                        }
-                        else
-                        {
-                            result = (Task)instance.GetType().InvokeMember(nameof(BaseCommand<DummyPlugin>.ExecutePrivateCommand), BindingFlags.Instance | BindingFlags.Public | BindingFlags.InvokeMethod, Type.DefaultBinder, instance, new object[] { characterCalling, args });
-                        }
-
-                        if (result.Status == TaskStatus.Faulted)
-                        {
-                            if (result.Exception.InnerException != null)
-                            {
-                                FChatClient.SendMessageInChannel($"Error: {result.Exception.InnerException.Message}", channel);
-                            }
-                            else
-                            {
-                                FChatClient.SendMessageInChannel($"Error: {result.Exception.Message}", channel);
-                            }
-                            return false;
-                        }
+                    if (result.Status == TaskStatus.Faulted)
+                    {
+                        Logger.LogError(result.Exception, "There was an error executing the '{0}' command sent by '{1}' in channel '{2}'. The task failed to execute: {3}.", command, characterCalling, channel, result.Exception?.Message);
+                        executionSuccessful = false;
                     }
                 }
                 catch (Exception ex)
                 {
-                    if (FChatClient != null && FChatClient.State != null && FChatClient.State.IsBotReady)
-                    {
-                        if (ex.InnerException != null)
-                        {
-                            FChatClient.SendMessageInChannel($"Internal error: {ex.InnerException.Message}", channel);
-                        }
-                        else
-                        {
-                            FChatClient.SendMessageInChannel($"Internal error: {ex.Message}", channel);
-                        }
-                    }
-                    return false;
+                    Logger.LogError(ex, "There was an error executing the '{0}' command sent by '{1}' in channel '{2}'.", command, characterCalling, channel);
+                    executionSuccessful = false;
                 }
-
-                return true;
             }
-            return false;
+            catch (Exception ex)
+            {
+                Logger.LogCritical(ex, "There was a critical error building the '{0}' command sent by '{1}' in channel '{2}'.", command, characterCalling, channel);
+                executionSuccessful = false;
+            }
+
+            if (!executionSuccessful)
+            {
+                FChatClient.SendPrivateMessage("There was an unexpected/unhandled error processing that command. Contact the administrator.", characterCalling);
+            }
+
+            return executionSuccessful;
         }
 
         public void OnPluginLoad()
         {
             PluginId = System.Guid.NewGuid();
 
-            if (!Options.Value.Debug)
+            if (Options.Value.Debug)
             {
-                FChatClient.Connect();
-
-                FChatClient.Events.ReceivedChatCommand += Events_ReceivedChatCommand;
-                FChatClient.BotConnected += FChatClient_BotConnected;
-                FChatClient.Events.ReceivedStateUpdate += Events_ReceivedStateUpdate;
-
-                Console.WriteLine("Awaiting connection to the Host... Make sure you've started at least one instance of FChatSharpHost (or Bot, if you know what you're doing).");
-            }
-            else
-            {
-                Console.WriteLine($"Debug mode activated. 'Joining' the default debug channel {DebugChannel}");
+                Logger.LogInformation($"Debug mode activated. 'Joining' the default debug channel {DebugChannel}");
+                return;
             }
 
+            FChatClient.Events.ReceivedChatCommand += Events_ReceivedChatCommand;
+            FChatClient.BotConnected += FChatClient_BotConnected;
+            FChatClient.Events.ReceivedStateUpdate += Events_ReceivedStateUpdate;
+
+            Logger.LogInformation("Awaiting connection to the Host... Make sure you've started at least one instance of FChatSharpHost (or Bot, if you know what you're doing).");
+            FChatClient.Connect();
         }
 
         public DateTime LastTimeJoinMissingChannelsCalled = DateTime.MinValue;
@@ -224,32 +218,34 @@ namespace FChatSharpLib.Entities.Plugin
 
         private void FChatClient_BotConnected(object sender, EventArgs e)
         {
-            Console.WriteLine("Connected!");
+            Logger.LogInformation("Connected!");
             JoinRequiredChannels(false);
         }
 
         private void JoinRequiredChannels(bool excludeAlreadyJoinedOnes = true)
         {
-            if (!Options.Value.Debug)
+            if (Options.Value.Debug)
             {
-                var missingJoinedChannels = Channels.Select(x => x.ToLower());
-                if (excludeAlreadyJoinedOnes)
-                {
-                    missingJoinedChannels = missingJoinedChannels.Except(FChatClient.State.Channels.Select(x => x.ToLower()));
-                }
-                foreach (var missingChannel in missingJoinedChannels)
-                {
-                    Console.WriteLine($"Joining channel {missingChannel}");
-                    FChatClient.JoinChannel(missingChannel);
-                }
+                return;
+            }
+
+            var missingJoinedChannels = Channels.Select(x => x.ToLower());
+            if (excludeAlreadyJoinedOnes)
+            {
+                missingJoinedChannels = missingJoinedChannels.Except(FChatClient.State.Channels.Select(x => x.ToLower()));
+            }
+            foreach (var missingChannel in missingJoinedChannels)
+            {
+                Logger.LogInformation($"Joining channel {missingChannel}");
+                FChatClient.JoinChannel(missingChannel);
             }
         }
 
-        private void Events_ReceivedChatCommand(object sender, ReceivedPluginCommandEventArgs e)
+        private async void Events_ReceivedChatCommand(object sender, ReceivedPluginCommandEventArgs e)
         {
             if (Channels.Contains(e.Channel, StringComparer.OrdinalIgnoreCase) || string.IsNullOrWhiteSpace(e.Channel)) //Null or whitespace=  private command
             {
-                ExecuteCommand(e.Character, e.Command, e.Arguments, e.Channel.ToLowerInvariant());
+                await TryExecuteCommand(e.Character, e.Command, e.Arguments, e.Channel.ToLowerInvariant());
             }
         }
 
@@ -261,11 +257,13 @@ namespace FChatSharpLib.Entities.Plugin
         public void AddHandledChannel(string channel)
         {
             Channels.Add(channel);
+            Logger.LogInformation("Added channel {0} to the list of handled channels.", channel);
         }
 
         public void RemoveHandledChannel(string channel)
         {
             Channels.RemoveAll(x => x.ToLower() == channel.ToLower());
+            Logger.LogInformation("Removed channel {0} from the list of handled channels.", channel);
         }
 
         /// <summary>
