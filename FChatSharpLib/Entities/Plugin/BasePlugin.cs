@@ -153,12 +153,12 @@ namespace FChatSharpLib.Entities.Plugin
                     if (!string.IsNullOrWhiteSpace(channel))
                     {
                         result = (Task)instance.GetType().InvokeMember(nameof(BaseCommand<DummyPlugin>.ExecuteCommand), BindingFlags.Instance | BindingFlags.Public | BindingFlags.InvokeMethod, Type.DefaultBinder, instance, new object[] { characterCalling, args, channel });
-                        await result.WaitAsync(TimeSpan.FromSeconds(60));
+                        await result.WaitAsync(TimeSpan.FromSeconds(300));
                     }
                     else
                     {
                         result = (Task)instance.GetType().InvokeMember(nameof(BaseCommand<DummyPlugin>.ExecutePrivateCommand), BindingFlags.Instance | BindingFlags.Public | BindingFlags.InvokeMethod, Type.DefaultBinder, instance, new object[] { characterCalling, args });
-                        await result.WaitAsync(TimeSpan.FromSeconds(60));
+                        await result.WaitAsync(TimeSpan.FromSeconds(300));
                     }
 
                     if (result.Status == TaskStatus.Faulted)

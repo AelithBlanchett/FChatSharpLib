@@ -102,6 +102,14 @@ namespace FChatSharpLib
                     var prvEvent = (FChatSharpLib.Entities.Events.Server.PrivateMessage)e.Event;
                     PrivateMessageReceived?.Invoke(this, prvEvent);
                     break;
+                case nameof(Entities.Events.Server.GetPublicChannels):
+                    var chaEvent = (FChatSharpLib.Entities.Events.Server.GetPublicChannels)e.Event;
+                    PublicChannelsListReceived?.Invoke(this, chaEvent);
+                    break;
+                case nameof(Entities.Events.Server.GetPrivateOpenedChannels):
+                    var orsEvent = (FChatSharpLib.Entities.Events.Server.GetPrivateOpenedChannels)e.Event;
+                    PrivateChannelsListReceived?.Invoke(this, orsEvent);
+                    break;
                 default:
                     break;
             }
@@ -122,6 +130,8 @@ namespace FChatSharpLib
         public event EventHandler<Entities.Events.Server.RollResult> RollResultReceived;
         public event EventHandler<Entities.Events.Server.Message> ChannelMessageReceived;
         public event EventHandler<Entities.Events.Server.PrivateMessage> PrivateMessageReceived;
+        public event EventHandler<Entities.Events.Server.GetPublicChannels> PublicChannelsListReceived;
+        public event EventHandler<Entities.Events.Server.GetPrivateOpenedChannels> PrivateChannelsListReceived;
 
 
         // Permissions / Administration
@@ -333,6 +343,22 @@ namespace FChatSharpLib
                 character = character,
                 channel = channel,
                 length = lengthInMinutes.ToString()
+            }.ToString());
+        }
+
+        public void GetPublicChannels()
+        {
+            SendCommandToServer(new GetPublicChannels()
+            {
+                
+            }.ToString());
+        }
+
+        public void GetPrivateOpenedChannels()
+        {
+            SendCommandToServer(new GetPrivateOpenedChannels()
+            {
+
             }.ToString());
         }
 
