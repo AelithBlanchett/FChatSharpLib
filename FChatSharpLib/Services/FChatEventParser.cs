@@ -20,7 +20,15 @@ namespace FChatSharpLib.Entities.Events
         {
             dynamic detectedEvent = null;
 
-            detectedEvent = GetParsedEvent(data, true);
+            try
+            {
+                detectedEvent = GetParsedEvent(data, true);
+            }
+            catch (Exception ex)
+            {
+                FChatSharpHost.Logger.LogError("Error parsing event: " + ex.ToString());
+            }
+            
 
             if (detectedEvent != null)
             {

@@ -92,6 +92,10 @@ namespace FChatSharpLib
             if (_commandQueue.TryDequeue(out var commandJson))
             {
                 Logger.LogDebug("Command sent over WS: " + commandJson);
+                if (!_commandQueue.IsEmpty)
+                {
+                    Logger.LogInformation($"{_commandQueue.Count} commands left to send.");
+                }
                 WSEventHandlers.WebSocketClient.Send(commandJson);
             }
         }
@@ -125,13 +129,13 @@ namespace FChatSharpLib
 
             _pubsubChannel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
 
-            _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.Plugins.FromPlugins", type: ExchangeType.Fanout);
-            _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.Plugins.ToPlugins", type: ExchangeType.Fanout);
-            _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.StateUpdates", type: ExchangeType.Fanout);
-            _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.Events", type: ExchangeType.Fanout);
+            _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.Plugins.FromPlugins", type: ExchangeType.Fanout, durable: true);
+            _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.Plugins.ToPlugins", type: ExchangeType.Fanout, durable: true);
+            _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.StateUpdates", type: ExchangeType.Fanout, durable: true);
+            _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.Events", type: ExchangeType.Fanout, durable: true);
 
             //F-chat commands from plugin consumer
-            var queueNameState = _pubsubChannel.QueueDeclare().QueueName;
+            var queueNameState = _pubsubChannel.QueueDeclare(durable: true).QueueName;
             _pubsubChannel.QueueBind(queue: queueNameState,
                               exchange: "FChatSharpLib.Plugins.FromPlugins",
                               routingKey: "");

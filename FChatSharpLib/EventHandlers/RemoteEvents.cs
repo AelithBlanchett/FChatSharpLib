@@ -63,12 +63,12 @@ namespace FChatSharpLib
 
             _pubsubChannel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
 
-            _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.Plugins.FromPlugins", type: ExchangeType.Fanout);
-            _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.StateUpdates", type: ExchangeType.Fanout);
-            _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.Events", type: ExchangeType.Fanout);
+            _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.Plugins.FromPlugins", type: ExchangeType.Fanout, durable: true);
+            _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.StateUpdates", type: ExchangeType.Fanout, durable: true);
+            _pubsubChannel.ExchangeDeclare(exchange: "FChatSharpLib.Events", type: ExchangeType.Fanout, durable: true);
 
             //State updates consumer
-            var queueNameState = _pubsubChannel.QueueDeclare().QueueName;
+            var queueNameState = _pubsubChannel.QueueDeclare(durable: true).QueueName;
             _pubsubChannel.QueueBind(queue: queueNameState,
                               exchange: "FChatSharpLib.StateUpdates",
                               routingKey: "");
@@ -79,7 +79,7 @@ namespace FChatSharpLib
                                  consumer: consumerState);
 
             //Events consumer
-            var queueNameEvents = _pubsubChannel.QueueDeclare().QueueName;
+            var queueNameEvents = _pubsubChannel.QueueDeclare(durable: true).QueueName;
             _pubsubChannel.QueueBind(queue: queueNameEvents,
                               exchange: "FChatSharpLib.Events",
                               routingKey: "");

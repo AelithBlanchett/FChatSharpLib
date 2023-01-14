@@ -110,6 +110,10 @@ namespace FChatSharpLib
                     var orsEvent = (FChatSharpLib.Entities.Events.Server.GetPrivateOpenedChannels)e.Event;
                     PrivateChannelsListReceived?.Invoke(this, orsEvent);
                     break;
+                case nameof(FChatSharpLib.Entities.Events.Server.ListConnectedUsers):
+                    var lisEvent = (FChatSharpLib.Entities.Events.Server.ListConnectedUsers)e.Event;
+                    ListConnectedUsersReceived?.Invoke(this, lisEvent);
+                    break;
                 default:
                     break;
             }
@@ -132,6 +136,7 @@ namespace FChatSharpLib
         public event EventHandler<Entities.Events.Server.PrivateMessage> PrivateMessageReceived;
         public event EventHandler<Entities.Events.Server.GetPublicChannels> PublicChannelsListReceived;
         public event EventHandler<Entities.Events.Server.GetPrivateOpenedChannels> PrivateChannelsListReceived;
+        public event EventHandler<Entities.Events.Server.ListConnectedUsers> ListConnectedUsersReceived;
 
 
         // Permissions / Administration
