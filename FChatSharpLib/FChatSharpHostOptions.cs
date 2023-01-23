@@ -1,7 +1,4 @@
-﻿using EasyConsole;
-using FChatSharpLib.GUI;
-using FChatSharpLib.GUI.Host;
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Text;

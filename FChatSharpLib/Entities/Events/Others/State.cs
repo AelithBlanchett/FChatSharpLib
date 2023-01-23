@@ -19,8 +19,8 @@ namespace FChatSharpLib.Entities.Events.Helpers
 
         public List<CharacterState> GetAllCharactersInChannel(string channel)
         {
-            var chanInfo = ChannelsInfo.GetValueOrDefault(channel);
-            if(chanInfo != null)
+            var hasChanInfo = ChannelsInfo.TryGetValue(channel, out var chanInfo);
+            if(hasChanInfo)
             {
                 return chanInfo.CharactersInfo;
             }
@@ -57,18 +57,23 @@ namespace FChatSharpLib.Entities.Events.Helpers
                 });
             }
 
-            var chanInfo = ChannelsInfo.GetValueOrDefault(channel);
-            var charInfo = chanInfo.CharactersInfo.Find(x => x.Character.ToLower() == character.ToLower());
-            if(charInfo == null)
+            var hasChanInfo = ChannelsInfo.TryGetValue(channel, out var chanInfo);
+            
+            if(hasChanInfo)
             {
-                chanInfo.CharactersInfo.Add(CharactersInfos.GetValueOrDefault(character));
+                var charInfo = chanInfo.CharactersInfo.Find(x => x.Character.ToLower() == character.ToLower());
+                if(charInfo == null)
+                {
+                    var hasFoundCharacter = CharactersInfos.TryGetValue(character, out var actualCharacterInfo);
+                    chanInfo.CharactersInfo.Add(actualCharacterInfo);
+                }
             }
         }
 
         public void RemoveCharacterInChannel(string channel, string character)
         {
-            var chanInfo = ChannelsInfo.GetValueOrDefault(channel);
-            if (chanInfo != null && chanInfo.CharactersInfo.Any(x => x.Character.ToLower() == character.ToLower()))
+            var hasChanInfo = ChannelsInfo.TryGetValue(channel, out var chanInfo);
+            if (hasChanInfo && chanInfo.CharactersInfo.Any(x => x.Character.ToLower() == character.ToLower()))
             {
                 chanInfo.CharactersInfo.RemoveAll(x => x.Character.ToLower() == character.ToLower());
             }

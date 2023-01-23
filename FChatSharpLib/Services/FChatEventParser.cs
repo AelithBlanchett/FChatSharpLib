@@ -66,7 +66,7 @@ namespace FChatSharpLib.Entities.Events
                         var arguments = new List<string>();
                         if(splittedMessage.Count() > 1)
                         {
-                            arguments.AddRange(splittedMessage[1].Replace(" ", "+-/*").Split("+-/*"));
+                            arguments.AddRange(splittedMessage[1].Replace(" ", "+-/*").Split("+-/*".ToCharArray()));
                         }
                         
 

@@ -9,7 +9,6 @@ using System.Collections.Specialized;
 using FChatSharpLib.Entities.EventHandlers.WebSocket;
 using FChatSharpLib.Entities.Plugin;
 using System.Reflection;
-using System.Security.Policy;
 using RabbitMQ.Client.Events;
 using RabbitMQ.Client;
 using FChatSharpLib.Entities.Events;
@@ -158,7 +157,8 @@ namespace FChatSharpLib
 
         public bool IsUserOP(string character, string channel)
         {
-            return !string.IsNullOrWhiteSpace(character) && (State.ChannelsInfo.GetValueOrDefault(channel.ToLower()) != null ? State.ChannelsInfo.GetValueOrDefault(channel.ToLower()).Operators.Any(x => x.ToLower() == character.ToLower()) : false);
+            return !string.IsNullOrWhiteSpace(character) && 
+                (State.ChannelsInfo.TryGetValue(channel.ToLower(), out var chanInfo) ? chanInfo.Operators.Any(x => x.ToLower() == character.ToLower()) : false);
         }
 
 

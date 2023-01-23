@@ -1,5 +1,6 @@
 ﻿using FChatSharpLib;
 using FChatSharpLib.Entities.Plugin;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
@@ -14,11 +15,13 @@ namespace FChatSharp.ExamplePlugin
         public Timer KickMonitor { get; set; }
         public IOptions<ExamplePluginOptions> ExamplePluginOptions { get; }
 
-        public ExamplePlugin(IOptions<ExamplePluginOptions> pluginOptions, RemoteBotController fChatClient) : base(pluginOptions, fChatClient)
+        public new ILogger<ExamplePlugin> Logger { get; }
+
+        public ExamplePlugin(IOptions<ExamplePluginOptions> pluginOptions, RemoteBotController fChatClient, ILogger<ExamplePlugin> logger) : base(pluginOptions, fChatClient, logger)
         {
+            Logger = logger;
             ExamplePluginOptions = pluginOptions;
             StartTimers();
-            Run();
         }
 
         private void StartTimers()

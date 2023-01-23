@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <Version>1.0.0-beta-8</Version>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Version>1.0.0-beta-11</Version>
     <Authors>Aelith Blanchette</Authors>
     <Description>Simple F-Chat (F-List.net's chat service) C# library with a plugin system, communicating by RabbitMQ.</Description>
     <PackageLicenseUrl>https://github.com/AelithBlanchett/FChatSharpLib/blob/master/LICENSE</PackageLicenseUrl>
@@ -13,21 +13,45 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <LangVersion>7.3</LangVersion>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <LangVersion>7.3</LangVersion>
-  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="GUI\Host\EnableDisableDebugMode.cs" />
+    <Compile Remove="GUI\Host\JoinChannelPage.cs" />
+    <Compile Remove="GUI\Host\LeaveChannelPage.cs" />
+    <Compile Remove="GUI\Host\MainPage.cs" />
+    <Compile Remove="GUI\Plugins\BroadcastMessagePage.cs" />
+    <Compile Remove="GUI\Plugins\EnableDisableDebugModePage.cs" />
+    <Compile Remove="GUI\Plugins\ExecuteCommand.cs" />
+    <Compile Remove="GUI\Plugins\JoinChannelPage.cs" />
+    <Compile Remove="GUI\Plugins\LeaveChannelPage.cs" />
+    <Compile Remove="GUI\Plugins\MainPage.cs" />
+    <Compile Remove="GUI\Plugins\SendMessagePage.cs" />
+    <Compile Remove="GUI\Plugins\StopListeningChannelPage.cs" />
+  </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="EasyConsole" Version="1.1.0" />
+    <None Include="GUI\Host\EnableDisableDebugMode.cs" />
+    <None Include="GUI\Host\JoinChannelPage.cs" />
+    <None Include="GUI\Host\LeaveChannelPage.cs" />
+    <None Include="GUI\Host\MainPage.cs" />
+    <None Include="GUI\Plugins\BroadcastMessagePage.cs" />
+    <None Include="GUI\Plugins\EnableDisableDebugModePage.cs" />
+    <None Include="GUI\Plugins\ExecuteCommand.cs" />
+    <None Include="GUI\Plugins\JoinChannelPage.cs" />
+    <None Include="GUI\Plugins\LeaveChannelPage.cs" />
+    <None Include="GUI\Plugins\MainPage.cs" />
+    <None Include="GUI\Plugins\SendMessagePage.cs" />
+    <None Include="GUI\Plugins\StopListeningChannelPage.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.4.0" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.1" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="RabbitMQ.Client" Version="6.3.0" />
+    <PackageReference Include="System.Dynamic.Runtime" Version="4.3.0" />
     <PackageReference Include="Websocket.Client" Version="4.4.43" />
   </ItemGroup>
 

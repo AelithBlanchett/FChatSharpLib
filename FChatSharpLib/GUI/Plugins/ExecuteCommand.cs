@@ -64,7 +64,7 @@ namespace FChatSharpLib.GUI.Plugins
 
             if (!string.IsNullOrWhiteSpace(inputArguments))
             {
-                arguments = inputArguments.Replace(" ", ",").Split(",").ToList();
+                arguments = inputArguments.Replace(" ", ",").Split(',').ToList();
             }
 
             Output.WriteLine($"Executing command {command} with character {inputCharacterName} and arguments {string.Join(",", arguments)}...");

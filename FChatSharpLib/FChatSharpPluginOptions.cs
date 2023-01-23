@@ -1,7 +1,4 @@
-﻿using EasyConsole;
-using FChatSharpLib.GUI;
-using FChatSharpLib.GUI.Host;
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -17,16 +14,13 @@ namespace FChatSharpLib
 
         }
 
-        public FChatSharpPluginOptions(bool debug, bool showConsole, List<string> channels)
+        public FChatSharpPluginOptions(bool debug, List<string> channels)
         {
             Debug = debug;
-            ShowConsole = showConsole;
             Channels = channels;
         }
 
         public bool Debug  { get; set; }
-
-        public bool ShowConsole { get; set; }
 
         public List<string> Channels { get; set; }
     }

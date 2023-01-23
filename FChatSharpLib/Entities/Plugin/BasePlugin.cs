@@ -1,7 +1,5 @@
-﻿using EasyConsole;
-using FChatSharpLib.Entities.EventHandlers;
+﻿using FChatSharpLib.Entities.EventHandlers;
 using FChatSharpLib.Entities.Plugin.Commands;
-using FChatSharpLib.GUI.Plugins;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -12,11 +10,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace FChatSharpLib.Entities.Plugin
 {
-    public abstract class BasePlugin : Program, IPlugin
+    public abstract class BasePlugin : IPlugin
     {
         public BaseBot FChatClient { get; set; }
         public ILogger<BasePlugin> Logger { get; }
@@ -46,23 +45,11 @@ namespace FChatSharpLib.Entities.Plugin
         {
             Name = this.GetType().Name;
             Version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-
-            if (Options.Value.ShowConsole)
-            {
-                AddPage(new MainPage(this, Name, Version));
-                AddPage(new JoinChannelPage(this));
-                AddPage(new LeaveChannelPage(this));
-                AddPage(new ExecuteCommandPage(this));
-                AddPage(new StopListeningChannelPage(this));
-                AddPage(new BroadcastMessagePage(this));
-                AddPage(new SendMessagePage(this));
-                SetPage<MainPage>();
-            }
         }
 
         private const string DebugChannel = "ADH-DEBUG";
 
-        public BasePlugin(IOptions<FChatSharpPluginOptions> options, RemoteBotController fChatClient, ILogger<BasePlugin> logger) : base($"Console host", breadcrumbHeader: true)
+        public BasePlugin(IOptions<FChatSharpPluginOptions> options, RemoteBotController fChatClient, ILogger<BasePlugin> logger)
         {
             Options = options;
             FChatClient = fChatClient;
@@ -73,12 +60,6 @@ namespace FChatSharpLib.Entities.Plugin
             InitializePlugin();
             OnPluginLoad();
             Logger.LogInformation("Loaded commands: " + string.Join(", ", GetCommandList()));
-
-            //get the type of the class
-            var finfos = GetFieldInfosIncludingBaseClasses(this.GetType(), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            FieldInfo finfo = finfos.First(x => x.DeclaringType.FullName == "EasyConsole.Program" && x.Name == "<Title>k__BackingField");
-            finfo.SetValue(this, $"{Name} ({Version})");
-
         }
 
         private bool IsAssignableToGenericType(Type givenType, Type genericType)
@@ -104,7 +85,7 @@ namespace FChatSharpLib.Entities.Plugin
         {
             var type = typeof(BaseCommand<>);
             var types = AppDomain.CurrentDomain.GetAssemblies().SelectMany(s => s.GetTypes()).Where(p => p.IsClass && !p.IsAbstract && p.IsPublic && IsAssignableToGenericType(p, typeof(BaseCommand<>)));
-            var listOfTypes = types.Select(x => x.Name.Split("`").FirstOrDefault()).Where(x => x != "BaseCommand`1").Distinct();
+            var listOfTypes = types.Select(x => x.Name.Split('`').FirstOrDefault()).Where(x => x != "BaseCommand`1").Distinct();
             return listOfTypes.ToList();
         }
 
@@ -130,7 +111,7 @@ namespace FChatSharpLib.Entities.Plugin
                 var thisType = this.GetType();
                 var searchedType = typeof(BaseCommand<>);
                 var types = AppDomain.CurrentDomain.GetAssemblies().SelectMany(s => s.GetTypes()).Where(p => IsAssignableToGenericType(p, typeof(BaseCommand<>)));
-                var typeToCreate = types.FirstOrDefault(x => x.Name.Split("`").FirstOrDefault().ToLower() == command.ToLower());
+                var typeToCreate = types.FirstOrDefault(x => x.Name.Split('`').FirstOrDefault().ToLower() == command.ToLower());
 
                 if (typeToCreate == null)
                 {
@@ -153,12 +134,12 @@ namespace FChatSharpLib.Entities.Plugin
                     if (!string.IsNullOrWhiteSpace(channel))
                     {
                         result = (Task)instance.GetType().InvokeMember(nameof(BaseCommand<DummyPlugin>.ExecuteCommand), BindingFlags.Instance | BindingFlags.Public | BindingFlags.InvokeMethod, Type.DefaultBinder, instance, new object[] { characterCalling, args, channel });
-                        await result.WaitAsync(TimeSpan.FromSeconds(300));
+                        await Task.WhenAny(result, Task.Delay(TimeSpan.FromSeconds(300)));
                     }
                     else
                     {
                         result = (Task)instance.GetType().InvokeMember(nameof(BaseCommand<DummyPlugin>.ExecutePrivateCommand), BindingFlags.Instance | BindingFlags.Public | BindingFlags.InvokeMethod, Type.DefaultBinder, instance, new object[] { characterCalling, args });
-                        await result.WaitAsync(TimeSpan.FromSeconds(300));
+                        await Task.WhenAny(result, Task.Delay(TimeSpan.FromSeconds(300)));
                     }
 
                     if (result.Status == TaskStatus.Faulted)
@@ -209,7 +190,7 @@ namespace FChatSharpLib.Entities.Plugin
 
         private void Events_ReceivedStateUpdate(object sender, ReceivedStateUpdateEventArgs e)
         {
-            if ((DateTime.Now - LastTimeJoinMissingChannelsCalled).TotalMilliseconds > 5000)
+            if ((DateTime.Now - LastTimeJoinMissingChannelsCalled).TotalMilliseconds > 30000)
             {
                 LastTimeJoinMissingChannelsCalled = DateTime.Now;
                 JoinRequiredChannels();
@@ -229,17 +210,42 @@ namespace FChatSharpLib.Entities.Plugin
                 return;
             }
 
+            var originalChannels = Options.Value.Channels;
             var missingJoinedChannels = Channels.Select(x => x.ToLower());
             if (excludeAlreadyJoinedOnes)
             {
-                missingJoinedChannels = missingJoinedChannels.Except(FChatClient.State.Channels.Select(x => x.ToLower()));
+                missingJoinedChannels = missingJoinedChannels.Except(FChatClient.State.Channels.Select(x => x.ToLower())).ToList();
             }
             foreach (var missingChannel in missingJoinedChannels)
             {
                 Logger.LogInformation($"Joining channel {missingChannel}");
                 FChatClient.JoinChannel(missingChannel);
+
+                if (!originalChannels.Contains(missingChannel))
+                {
+                    if (!LastJoinedChannels.ContainsKey(missingChannel))
+                    {
+                        LastJoinedChannels.Add(missingChannel, 1);
+                    }
+                    else
+                    {
+                        LastJoinedChannels[missingChannel]++;
+                    }
+
+                    if (LastJoinedChannels.TryGetValue(missingChannel, out var channelRetryCount))
+                    {
+                        if (channelRetryCount >= 3)
+                        {
+                            RemoveHandledChannel(missingChannel);
+                            FChatClient.LeaveChannel(missingChannel);
+                            LastJoinedChannels.Remove(missingChannel);
+                        }
+                    }
+                }
             }
         }
+
+        public Dictionary<string, int> LastJoinedChannels = new Dictionary<string, int>();
 
         private async void Events_ReceivedChatCommand(object sender, ReceivedPluginCommandEventArgs e)
         {
