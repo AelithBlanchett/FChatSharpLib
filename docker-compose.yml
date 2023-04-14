@@ -2,7 +2,7 @@ version: '3.4'
 
 services:
   fchatsharp.host:
-    image: ${DOCKER_REGISTRY-}fchatsharphost
+    image: ${DOCKER_REGISTRY-}fchatsharphost:${DOCKER_TAG-}
     build:
       context: .
       dockerfile: FChatSharpLib.Host/Dockerfile
