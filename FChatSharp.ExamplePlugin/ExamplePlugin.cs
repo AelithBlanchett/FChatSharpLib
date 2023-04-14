@@ -36,7 +36,7 @@ namespace FChatSharp.ExamplePlugin
             FChatClient.SendMessageInChannel($"Hey, {e.character.identity} just joined us!", e.channel);
         }
 
-        private void FChatClient_BotCreatedChannel(object sender, FChatSharpLib.Entities.Events.Server.InitialChannelData e)
+        private void FChatClient_BotCreatedChannel(object sender, FChatSharpLib.Entities.Events.Server.JoinChannel e)
         {
             FChatClient.ChangeChannelPrivacy(false, e.channel);
         }

@@ -16,6 +16,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FChatSharpLib.Entities.Events.Helpers;
 using System.Linq;
+using System.Collections.Concurrent;
 
 namespace FChatSharpLib
 {
@@ -51,15 +52,15 @@ namespace FChatSharpLib
                 case nameof(FChatSharpLib.Entities.Events.Server.JoinChannel):
                     var jchEvent = (FChatSharpLib.Entities.Events.Server.JoinChannel)e.Event;
                     UserJoinedChannel?.Invoke(this, jchEvent);
+                    if (_newChannelsAboutToBeJoined.ContainsKey(jchEvent.title))
+                    {
+                        BotCreatedChannel?.Invoke(this, jchEvent);
+                        _newChannelsAboutToBeJoined.TryRemove(jchEvent.title, out var x);
+                    }
                     break;
                 case nameof(FChatSharpLib.Entities.Events.Server.InitialChannelData):
                     var ichEvent = (FChatSharpLib.Entities.Events.Server.InitialChannelData)e.Event;
                     BotJoinedChannel?.Invoke(this, ichEvent);
-                    if (numberOfChannelsToTreatAsNewlyCreatedChannel > 0)
-                    {
-                        numberOfChannelsToTreatAsNewlyCreatedChannel--;
-                        BotCreatedChannel?.Invoke(this, ichEvent);
-                    }
                     break;
                 case nameof(FChatSharpLib.Entities.Events.Server.ConnectedUsers):
                     var conEvent = (FChatSharpLib.Entities.Events.Server.ConnectedUsers)e.Event;
@@ -113,6 +114,18 @@ namespace FChatSharpLib
                     var lisEvent = (FChatSharpLib.Entities.Events.Server.ListConnectedUsers)e.Event;
                     ListConnectedUsersReceived?.Invoke(this, lisEvent);
                     break;
+                case nameof(FChatSharpLib.Entities.Events.Server.Error):
+                    var errEvent = (FChatSharpLib.Entities.Events.Server.Error)e.Event;
+                    ErrorReceived?.Invoke(this, errEvent);
+                    break;
+                case nameof(FChatSharpLib.Entities.Events.Server.SystemMessage):
+                    var sysEvent = (FChatSharpLib.Entities.Events.Server.SystemMessage)e.Event;
+                    SystemMessageReceived?.Invoke(this, sysEvent);
+                    break;
+                case nameof(FChatSharpLib.Entities.Events.Server.TypingStatus):
+                    var tpnEvent = (FChatSharpLib.Entities.Events.Server.TypingStatus)e.Event;
+                    TypingStatusReceived?.Invoke(this, tpnEvent);
+                    break;
                 default:
                     break;
             }
@@ -128,7 +141,7 @@ namespace FChatSharpLib
         public event EventHandler<Entities.Events.Server.LeaveChannel> UserLeftChannel;
         public event EventHandler<Entities.Events.Server.AddedChanOP> AddedOPInChannel;
         public event EventHandler<Entities.Events.Server.RemovedChanOP> RemovedOPInChannel;
-        public event EventHandler<Entities.Events.Server.InitialChannelData> BotCreatedChannel;
+        public event EventHandler<Entities.Events.Server.JoinChannel> BotCreatedChannel;
         public event EventHandler<Entities.EventHandlers.ReceivedStateUpdateEventArgs> BotConnected;
         public event EventHandler<Entities.Events.Server.RollResult> RollResultReceived;
         public event EventHandler<Entities.Events.Server.Message> ChannelMessageReceived;
@@ -136,6 +149,9 @@ namespace FChatSharpLib
         public event EventHandler<Entities.Events.Server.GetPublicChannels> PublicChannelsListReceived;
         public event EventHandler<Entities.Events.Server.GetPrivateOpenedChannels> PrivateChannelsListReceived;
         public event EventHandler<Entities.Events.Server.ListConnectedUsers> ListConnectedUsersReceived;
+        public event EventHandler<Entities.Events.Server.Error> ErrorReceived;
+        public event EventHandler<Entities.Events.Server.TypingStatus> TypingStatusReceived;
+        public event EventHandler<Entities.Events.Server.SystemMessage> SystemMessageReceived;
 
 
         // Permissions / Administration
@@ -172,9 +188,11 @@ namespace FChatSharpLib
             }.ToString());
         }
 
+        private ConcurrentDictionary<string, string> _newChannelsAboutToBeJoined = new ConcurrentDictionary<string, string>();
+
         public void CreateChannel(string channelTitle)
         {
-            numberOfChannelsToTreatAsNewlyCreatedChannel++;
+            _newChannelsAboutToBeJoined.GetOrAdd(channelTitle, channelTitle);
             SendCommandToServer(new CreateChannel()
             {
                 channel = channelTitle

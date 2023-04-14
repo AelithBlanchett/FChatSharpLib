@@ -19,6 +19,8 @@ using System.Linq;
 using FChatSharpLib.Entities.EventHandlers.FChatEvents;
 using System.Globalization;
 using Microsoft.Extensions.Options;
+using Websocket.Client.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace FChatSharpLib
 {
@@ -181,6 +183,10 @@ namespace FChatSharpLib
                         default:
                             break;
                     }
+                    break;
+                case nameof(FChatSharpLib.Entities.Events.Server.Error):
+                    var errEvent = (FChatSharpLib.Entities.Events.Server.Error)e.Event;
+                    Events.Logger.LogError($"F-list error #{errEvent.number}: {errEvent.message}");
                     break;
                 default:
                     triggered = false;

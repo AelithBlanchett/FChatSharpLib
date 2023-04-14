@@ -31,7 +31,7 @@ namespace FChatSharpLib
         private ConcurrentQueue<string> _commandQueue = new ConcurrentQueue<string>();
 
         public IWebSocketEventHandler WSEventHandlers { get; set; }
-        public ILogger<Events> Logger { get; }
+        public ILogger<IEvents> Logger { get; }
 
         public bool Debug
         {

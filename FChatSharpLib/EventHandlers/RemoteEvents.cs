@@ -20,7 +20,7 @@ namespace FChatSharpLib
         public double FloodLimit { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
         public IOptions<IFChatSharpOptions> Options { get; }
         public IOptions<ConnectionFactory> RabbitMqConnectionFactory { get; }
-        public ILogger<RemoteEvents> Logger { get; }
+        public ILogger<IEvents> Logger { get; }
 
         public RemoteEvents(IOptions<FChatSharpPluginOptions> fchatSharpHostOptions, IOptions<ConnectionFactory> rabbitMqConnectionFactory, ILogger<RemoteEvents> logger)
         {
