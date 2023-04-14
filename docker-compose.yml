@@ -1,7 +1,7 @@
 version: '3.4'
 
 services:
-  fchatsharp.host:
+  fchatsharphost:
     image: ${DOCKER_REGISTRY-}fchatsharphost:${DOCKER_TAG-}
     build:
       context: .
